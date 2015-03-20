@@ -1,0 +1,17 @@
+package br.ufrn.ppgsc.backhoe.persistence.dao;
+
+public enum DAOType {
+	CHANGED_LINE,
+	CHANGED_PATH,
+	COMMIT,
+	DEVELOPER,
+	METRIC,
+	METRIC_TYPE,
+	PROJECT,
+	TASK,
+	TASK_LOG,
+	TASK_LOG_TYPE,
+	TASK_PRIORITY,
+	TASK_STATUS,
+	TASK_TYPE
+}
