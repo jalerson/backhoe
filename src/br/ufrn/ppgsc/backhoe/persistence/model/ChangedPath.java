@@ -8,6 +8,8 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import org.hibernate.annotations.Type;
+
 @Entity
 public class ChangedPath extends Model {
 	@Id
@@ -19,7 +21,15 @@ public class ChangedPath extends Model {
 	private Commit commit;
 	@OneToMany(mappedBy = "changedPath")
 	private List<ChangedLine> changedLines;
+	@Type(type="text")
+	private String content;
 	
+	public String getContent() {
+		return content;
+	}
+	public void setContent(String content) {
+		this.content = content;
+	}
 	public Long getId() {
 		return id;
 	}

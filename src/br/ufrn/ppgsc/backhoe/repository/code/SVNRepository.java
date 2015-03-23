@@ -1,5 +1,6 @@
 package br.ufrn.ppgsc.backhoe.repository.code;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -9,6 +10,7 @@ import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.SVNLogEntry;
 import org.tmatesoft.svn.core.SVNLogEntryPath;
+import org.tmatesoft.svn.core.SVNProperties;
 import org.tmatesoft.svn.core.SVNURL;
 import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
@@ -30,7 +32,6 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractDeveloperDAO;
 import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
 import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Developer;
-import br.ufrn.ppgsc.backhoe.vo.wrapper.AbstractFileRevisionWrapper;
 
 public class SVNRepository extends CodeRepository {
 	private org.tmatesoft.svn.core.io.SVNRepository repository;
@@ -57,7 +58,7 @@ public class SVNRepository extends CodeRepository {
 		if(username == null) {
 			throw new MissingParameterException("Missing mandatory parameter: String username");
 		}
-		if(url == null) {
+		if(password == null) {
 			throw new MissingParameterException("Missing mandatory parameter: String password");
 		}
 		
@@ -171,22 +172,36 @@ public class SVNRepository extends CodeRepository {
 			
 			return changedPaths;
 		} catch (SVNException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
 	}
-	
+
 	@Override
-	public List<AbstractFileRevisionWrapper> findFileRevisions(String path, Long startRevision, Long endRevision) {
-		ArrayList<SVNFileRevision> revisions = new ArrayList<SVNFileRevision>();
+	public String getFileContent(String path, Long revision) {
 		try {
-			repository.getFileRevisions(path, revisions, startRevision, endRevision);
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			repository.getFile(path, revision, new SVNProperties(), output);
+			return new String(output.toByteArray());
 		} catch (SVNException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		return null;
+	}
+
+	@Override
+	public List<Long> getFileRevisions(String path, Long startRevision, Long endRevision) {
+		ArrayList<SVNFileRevision> svnFileRevisions = new ArrayList<SVNFileRevision>();
+		ArrayList<Long> revisions = new ArrayList<Long>();
+		try {
+			repository.getFileRevisions(path, svnFileRevisions, startRevision, endRevision);
+			for (SVNFileRevision svnFileRevision : svnFileRevisions) {
+				revisions.add(svnFileRevision.getRevision());
+			}
+			return revisions;
+		} catch (SVNException e) {
+			e.printStackTrace();
+		}
 		return null;
 	}
 
