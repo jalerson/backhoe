@@ -76,8 +76,9 @@ public class SVNRepository extends CodeRepository {
 	}
 	
 	@Override
-	public List<Commit> findCommitsByTimeRangeAndDevelopers(Date startDate, Date endDate, List<String> developers, boolean collectChangedPaths) {
-		List<Commit> commits = findCommitsByTimeRange(startDate, endDate, collectChangedPaths);
+	public List<Commit> findCommitsByTimeRangeAndDevelopers(Date startDate, Date endDate, List<String> developers, 
+			boolean collectChangedPaths, List<String> ignoredPaths) {
+		List<Commit> commits = findCommitsByTimeRange(startDate, endDate, collectChangedPaths, ignoredPaths);
 		for (Commit commit : commits) {
 			if(!developers.contains(commit.getAuthor())) {
 				commits.remove(commit);
@@ -87,7 +88,7 @@ public class SVNRepository extends CodeRepository {
 	}
 	
 	@Override
-	public List<Commit> findCommitsByTimeRange(Date startDate, Date endDate, boolean collectChangedPaths) {
+	public List<Commit> findCommitsByTimeRange(Date startDate, Date endDate, boolean collectChangedPaths, List<String> ignoredPaths) {
 		ArrayList<Commit> commits = new ArrayList<Commit>();
 
 		SvnOperationFactory svnOperationFactory = new SvnOperationFactory();
@@ -118,7 +119,7 @@ public class SVNRepository extends CodeRepository {
 					// commit.setLog(???);
 					commit.setRevision(svnLogEntry.getRevision());
 					if(collectChangedPaths) {
-						commit.setChangedPaths(findChangedPathsByRevision(svnLogEntry.getRevision()));
+						commit.setChangedPaths(findChangedPathsByRevision(svnLogEntry.getRevision(), ignoredPaths));
 					}
 					
 				}
@@ -133,12 +134,12 @@ public class SVNRepository extends CodeRepository {
 	}
 	
 	@Override
-	public List<ChangedPath> findChangedPathsByRevision(Long revision) {
-		return findChangedPathsByRevisionRage(revision, revision);
+	public List<ChangedPath> findChangedPathsByRevision(Long revision, List<String> ignoredPaths) {
+		return findChangedPathsByRevisionRage(revision, revision, ignoredPaths);
 	}
 	
 	@Override
-	public List<ChangedPath> findChangedPathsByRevisionRage(Long startRevision, Long endRevision) {
+	public List<ChangedPath> findChangedPathsByRevisionRage(Long startRevision, Long endRevision, List<String> ignoredPaths) {
 		Collection<SVNLogEntry> svnLogEntries;
 		ArrayList<ChangedPath> changedPaths = new ArrayList<ChangedPath>();
 		try {
@@ -147,6 +148,9 @@ public class SVNRepository extends CodeRepository {
 			for (SVNLogEntry svnLogEntry : svnLogEntries) {
 				Collection<SVNLogEntryPath> svnLogEntryPaths = svnLogEntry.getChangedPaths().values();
 				for (SVNLogEntryPath svnLogEntryPath : svnLogEntryPaths) {
+					if(ignoredPaths.contains(svnLogEntryPath.getPath())) {
+						continue;
+					}
 					ChangedPath changedPath = new ChangedPath();
 					changedPath.setChangeType(svnLogEntryPath.getType());
 					Commit commit = commitDao.findByRevision(svnLogEntry.getRevision());

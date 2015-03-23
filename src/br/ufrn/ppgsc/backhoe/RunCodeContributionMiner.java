@@ -22,10 +22,12 @@ public class RunCodeContributionMiner {
 		repository.setPassword(svnProperties.getProperty("password"));
 		repository.setURL(svnProperties.getProperty("url"));
 		
-		Date date = new Date(Date.parse("2014-11-03"));
+		Date startDate = new Date(Date.parse("2014-11-03"));
+		Date endDate = new Date(Date.parse("2014-11-03"));
 		ArrayList<String> developers = new ArrayList(Arrays.asList(new String[]{ "a", "b", "c" }));
+		ArrayList<String> ignoredPaths = new ArrayList<String>(Arrays.asList(new String[]{ "/trunk/LPS", "/ExemploIntegracaoSIAFI", "/branches" }));
 		
-		CodeContributionMiner miner = new CodeContributionMiner(repository, date, developers);
+		CodeContributionMiner miner = new CodeContributionMiner(repository, startDate, endDate, developers, ignoredPaths);
 		try {
 			miner.setup();
 			miner.execute();

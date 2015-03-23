@@ -38,19 +38,14 @@ public class CodeContributionMiner extends Miner {
 	private MetricType deletedLOCMetricType;
 	private MetricType addedMethodsMetricType;
 	private MetricType changedMethodsMetricType;
+	private List<String> ignoredPaths;
 	
-	public CodeContributionMiner(CodeRepository repository, Date startDate, Date endDate, List<String> developers) {
+	public CodeContributionMiner(CodeRepository repository, Date startDate, Date endDate, List<String> developers, List<String> ignoredPaths) {
 		this.startDate = startDate;
 		this.endDate = endDate;
 		this.developers = developers;
 		this.repository = repository;
-	}
-	
-	public CodeContributionMiner(CodeRepository repository, Date date, List<String> developers) {
-		this.startDate = date;
-		this.endDate = date;
-		this.developers = developers;
-		this.repository = repository;
+		this.ignoredPaths = ignoredPaths;
 	}
 	
 	@Override
@@ -118,9 +113,9 @@ public class CodeContributionMiner extends Miner {
 	public void execute() {
 		List<Commit> commits = null;
 		if(developers == null) {
-			commits = repository.findCommitsByTimeRange(startDate, endDate, true);
+			commits = repository.findCommitsByTimeRange(startDate, endDate, true, ignoredPaths);
 		} else {
-			commits = repository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true);
+			commits = repository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, ignoredPaths);
 		}
 		commitDao.save(commits);
 		
