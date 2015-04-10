@@ -18,5 +18,9 @@
 	<classpathentry kind="lib" path="lib/java-diff-utils-1.3.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.jdt.core_3.5.2.v_981_R35x.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.equinox.common_3.5.1.R35x_v20090807-1100.jar"/>
+	<classpathentry kind="lib" path="lib/sqljet-1.1.5.jar"/>
+	<classpathentry kind="lib" path="lib/svnkit-cli-1.7.6-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="lib/svnkit-javahl16-1.7.6.jar"/>
+	<classpathentry kind="lib" path="lib/svnkit-osgi-1.7.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
