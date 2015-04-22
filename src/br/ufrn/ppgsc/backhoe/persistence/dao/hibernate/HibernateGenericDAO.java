@@ -7,8 +7,11 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
-public class HibernateGenericDAO<T> {
-	protected Session session;
+import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractDAO;
+
+public abstract class HibernateGenericDAO<T> implements AbstractDAO<T>{
+	
+	private Session session;
 	
 	public HibernateGenericDAO() {
 		Configuration config = new Configuration();
@@ -17,28 +20,62 @@ public class HibernateGenericDAO<T> {
 		session = factory.openSession();
 	}
 	
+	 protected Session getSession(){  
+        if(this.session == null || !this.session.isOpen()) 
+            this.session = HibernateUtil.getSession();
+        return this.session;  
+    }
+	
 	public T get(Long id) {
-        return (T) session.load(getTypeClass(), id);
+        return (T) getSession().load(getTypeClass(), id);
     }
  
     public void save(T obj) {
-        session.persist(obj);
+    	try{
+	    	getSession().beginTransaction();
+	        getSession().persist(obj);
+	        getSession().flush();
+	        getSession().getTransaction().commit();
+    	}catch (Exception e) {
+			getSession().getTransaction().rollback();
+		}finally{
+			getSession().close();
+		}
     }
  
     public void update(T obj) {
-    	session.merge(obj);
+    	try{
+    		getSession().beginTransaction();
+        	getSession().merge(obj);
+        	getSession().flush();
+        	getSession().getTransaction().commit();
+    	}catch (Exception e) {
+			getSession().getTransaction().rollback();
+		}finally{
+			getSession().close();
+		}
+		
     }
  
     public void delete(T obj) {
-    	session.delete(obj);
+    	try{
+	    	getSession().beginTransaction();
+	    	getSession().delete(obj);
+	    	getSession().flush();
+	    	getSession().getTransaction().commit();
+    	}catch (Exception e) {
+			getSession().getTransaction().rollback();
+		}finally{
+			getSession().close();
+		}
     }
  
     public List<T> all() {
-        return session.createQuery(("FROM " + getTypeClass().getName())).list();
+        return getSession().createQuery(("FROM " + getTypeClass().getName())).list();
     }
 	
 	private Class<?> getTypeClass() {
-        Class<?> clazz = (Class<?>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[1];
+        Class<?> clazz = (Class<?>) ((ParameterizedType) this.getClass().getGenericSuperclass()).getActualTypeArguments()[0];
         return clazz;
     }
 }

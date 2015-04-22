@@ -9,7 +9,7 @@ public class HibernateMetricTypeDAO extends HibernateGenericDAO<MetricType> impl
 
 	@Override
 	public MetricType findBySlug(String slug) {
-		Query query = session.createQuery("from MetricType m where m.slug = :slug");
+		Query query = getSession().createQuery("from MetricType m where m.slug = :slug");
 		query.setParameter("slug", slug);
 		return (MetricType) query.uniqueResult();
 	}
