@@ -79,11 +79,14 @@ public class SVNRepository extends CodeRepository {
 	public List<Commit> findCommitsByTimeRangeAndDevelopers(Date startDate, Date endDate, List<String> developers, 
 			boolean collectChangedPaths, List<String> ignoredPaths) {
 		List<Commit> commits = findCommitsByTimeRange(startDate, endDate, collectChangedPaths, ignoredPaths);
-		for (Commit commit : commits) {
-			if(!developers.contains(commit.getAuthor())) {
-				commits.remove(commit);
-			}
-		}
+		System.out.print("Finding commits of an specifics developers ... ");
+		List<Commit> excludedCommits = new ArrayList<Commit>();
+		for (Commit commit : commits)
+			if(!developers.contains(commit.getAuthor().getCodeRepositoryUsername()))
+				excludedCommits.add(commit);
+		commits.removeAll(excludedCommits);
+		
+		System.out.println("Finished!\n"+commits.size()+" commits found!");
 		return commits;
 	}
 	
@@ -95,6 +98,8 @@ public class SVNRepository extends CodeRepository {
 		svnOperationFactory.setAuthenticationManager(repository.getAuthenticationManager());
 
 		try {
+			System.out.print("Finding commits in the date interval: "+startDate.toString()+" - "+endDate.toString()+" ... ");
+			
 			SvnLog log = svnOperationFactory.createLog();
 			log.addTarget(SvnTarget.fromURL(SVNURL.parseURIEncoded(url)));
 			log.addRange(SvnRevisionRange.create(SVNRevision.create(startDate), SVNRevision.create(endDate)));
@@ -102,7 +107,8 @@ public class SVNRepository extends CodeRepository {
 			log.setDepth(SVNDepth.INFINITY);
 			ArrayList<SVNLogEntry> svnLogEntries = new ArrayList<SVNLogEntry>();
 			log.run(svnLogEntries);
-			System.out.println("Finished! "+svnLogEntries.size()+" commits found!");
+			
+			System.out.println("Finished!\n"+svnLogEntries.size()+" commits found!");
 			
 			for (SVNLogEntry svnLogEntry : svnLogEntries) {
 				if(svnLogEntry.getDate().after(startDate) && svnLogEntry.getDate().before(endDate)) {
@@ -111,6 +117,7 @@ public class SVNRepository extends CodeRepository {
 					if(developer == null) {
 						developer = new Developer();
 						developer.setCodeRepositoryUsername(svnLogEntry.getAuthor());
+						developerDao.save(developer);
 					}
 					commit.setAuthor(developer);
 					// commit.setBranch(???);
@@ -121,7 +128,7 @@ public class SVNRepository extends CodeRepository {
 					if(collectChangedPaths) {
 						commit.setChangedPaths(findChangedPathsByRevision(svnLogEntry.getRevision(), ignoredPaths));
 					}
-					
+					commits.add(commit);
 				}
 			}
 			return commits;

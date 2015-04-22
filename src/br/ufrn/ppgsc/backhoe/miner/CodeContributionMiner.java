@@ -4,17 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import difflib.Delta;
-import difflib.DiffUtils;
-import difflib.Patch;
-import br.ufrn.ppgsc.backhoe.exceptions.DAONotFoundException;
 import br.ufrn.ppgsc.backhoe.exceptions.MissingParameterException;
-import br.ufrn.ppgsc.backhoe.persistence.dao.DAOFactory;
-import br.ufrn.ppgsc.backhoe.persistence.dao.DAOType;
-import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractChangedPathDAO;
-import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractCommitDAO;
-import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractMetricDAO;
-import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractMetricTypeDAO;
 import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
 import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
@@ -23,86 +13,52 @@ import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
 import br.ufrn.ppgsc.backhoe.util.CodeRepositoryUtil;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.ClassWrapper;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.MethodWrapper;
+import difflib.Delta;
+import difflib.DiffUtils;
+import difflib.Patch;
 
-public class CodeContributionMiner extends Miner {
-	private Date startDate;
-	private Date endDate;
-	private List<String> developers;
-	private CodeRepository repository;
-	private AbstractCommitDAO commitDao;
-	private AbstractChangedPathDAO changedPathDao;
-	private AbstractMetricDAO metricDao;
-	private AbstractMetricTypeDAO metricTypeDao;
+public class CodeContributionMiner extends AbstractMiner {
+	
 	private MetricType addedLOCMetricType;
 	private MetricType changedLOCMetricType;
 	private MetricType deletedLOCMetricType;
 	private MetricType addedMethodsMetricType;
 	private MetricType changedMethodsMetricType;
-	private List<String> ignoredPaths;
 	
 	public CodeContributionMiner(CodeRepository repository, Date startDate, Date endDate, List<String> developers, List<String> ignoredPaths) {
-		this.startDate = startDate;
-		this.endDate = endDate;
-		this.developers = developers;
-		this.repository = repository;
-		this.ignoredPaths = ignoredPaths;
+		super(repository, startDate, endDate, developers, ignoredPaths);
 	}
 	
 	@Override
-	public boolean setup() throws MissingParameterException {
-		if(repository == null) {
-			throw new MissingParameterException("Missing mandatory parameter: CodeRepository repository");
-		}
-		if(startDate == null) {
-			throw new MissingParameterException("Missing mandatory parameter: Date startDate");
-		}
-		if(endDate == null) {
-			throw new MissingParameterException("Missing mandatory parameter: Date endDate");
-		}
-		
-		try {
-			this.commitDao = (AbstractCommitDAO) DAOFactory.createDAO(DAOType.COMMIT);
-			this.changedPathDao = (AbstractChangedPathDAO) DAOFactory.createDAO(DAOType.CHANGED_PATH);
-			this.metricDao = (AbstractMetricDAO) DAOFactory.createDAO(DAOType.METRIC);
-			this.metricTypeDao = (AbstractMetricTypeDAO) DAOFactory.createDAO(DAOType.METRIC_TYPE);
-		} catch (DAONotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+	public boolean setupMinerSpecific() throws MissingParameterException {
+	
 		this.addedLOCMetricType = metricTypeDao.findBySlug("loc:added");
 		if(this.addedLOCMetricType == null) {
-			this.addedLOCMetricType = new MetricType();
-			this.addedLOCMetricType.setName("Added LOC");
-			this.addedLOCMetricType.setSlug("loc:added");
+			this.addedLOCMetricType = new MetricType("Added LOC", "loc:added");
 			metricTypeDao.save(this.addedLOCMetricType);
 		}
+		
 		this.changedLOCMetricType = metricTypeDao.findBySlug("loc:changed");
 		if(this.changedLOCMetricType == null) {
-			this.changedLOCMetricType = new MetricType();
-			this.changedLOCMetricType.setName("Changed LOC");
-			this.changedLOCMetricType.setSlug("loc:changed");
+			this.changedLOCMetricType = new MetricType("Changed LOC", "loc:changed");
 			metricTypeDao.save(this.changedLOCMetricType);
 		}
+		
 		this.deletedLOCMetricType = metricTypeDao.findBySlug("loc:deleted");
 		if(this.deletedLOCMetricType == null) {
-			this.deletedLOCMetricType = new MetricType();
-			this.deletedLOCMetricType.setName("Deleted LOC");
-			this.deletedLOCMetricType.setSlug("loc:deleted");
+			this.deletedLOCMetricType = new MetricType("Deleted LOC", "loc:deleted");
 			metricTypeDao.save(this.deletedLOCMetricType);
 		}
+		
 		this.addedMethodsMetricType = metricTypeDao.findBySlug("methods:added");
 		if(this.addedMethodsMetricType == null) {
-			this.addedMethodsMetricType = new MetricType();
-			this.addedMethodsMetricType.setName("Added Methods");
-			this.addedMethodsMetricType.setSlug("methods:added");
+			this.addedMethodsMetricType = new MetricType("Added Methods", "methods:added");
 			metricTypeDao.save(this.addedMethodsMetricType);
 		}
+		
 		this.changedMethodsMetricType = metricTypeDao.findBySlug("methods:changed");
 		if(this.changedMethodsMetricType == null) {
-			this.changedMethodsMetricType = new MetricType();
-			this.changedMethodsMetricType.setName("Changed Methods");
-			this.changedMethodsMetricType.setSlug("methods:changed");
+			this.changedMethodsMetricType = new MetricType("Changed Methods", "methods:changed");
 			metricTypeDao.save(this.changedMethodsMetricType);
 		}
 		
@@ -117,17 +73,20 @@ public class CodeContributionMiner extends Miner {
 		} else {
 			commits = repository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, ignoredPaths);
 		}
+
 		commitDao.save(commits);
+		
+		System.out.println("\nCalculating code contribution metrics...");
+		
+		int processedCommits = 0;
 		
 		for (Commit commit : commits) {
 			List<ChangedPath> changedPaths = commit.getChangedPaths();
 			for (ChangedPath changedPath : changedPaths) {
-				if(changedPath.getChangeType().equals('D')) {
+				if(changedPath.getChangeType().equals('D'))
 					continue;
-				}
-				if(!(changedPath.getPath().toLowerCase().contains(".java"))) {
+				if(!(changedPath.getPath().toLowerCase().contains(".java")))
 					continue;
-				}
 				
 				String currentContent = repository.getFileContent(changedPath.getPath(), changedPath.getCommit().getRevision());
 				changedPath.setContent(currentContent);
@@ -166,7 +125,9 @@ public class CodeContributionMiner extends Miner {
 					metricDao.save(addedMethodsMetric);
 				}
 			}
+			System.out.println("[" + ++processedCommits + "] of [" + commits.size() + "] processed commits.");
 		}
+		System.out.println("Code Contribution Miner execut end!\n");
 	}
 	
 	private void calculateMethodMetrics(ChangedPath changedPath, String previousContent, String currentContent) {
