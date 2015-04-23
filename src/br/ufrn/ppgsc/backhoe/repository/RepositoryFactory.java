@@ -6,9 +6,11 @@ public class RepositoryFactory {
 	
 	public static Repository createRepository(RepositoryType type) {
 		switch(type) {
-			case SVN: return new SVNRepository();
+			case SVN: 
+				return new SVNRepository();
+			default:
+				return null;
 		}
-		return null;
 	}
 	
 }

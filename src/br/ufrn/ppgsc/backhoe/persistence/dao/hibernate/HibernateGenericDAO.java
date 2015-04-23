@@ -13,6 +13,7 @@ public abstract class HibernateGenericDAO<T> implements AbstractDAO<T>{
 	
 	private Session session;
 	
+	@SuppressWarnings("deprecation")
 	public HibernateGenericDAO() {
 		Configuration config = new Configuration();
 		config.configure("hibernate.cfg.xml");
@@ -26,6 +27,7 @@ public abstract class HibernateGenericDAO<T> implements AbstractDAO<T>{
         return this.session;  
     }
 	
+	 @SuppressWarnings("unchecked")
 	public T get(Long id) {
         return (T) getSession().load(getTypeClass(), id);
     }
@@ -70,7 +72,8 @@ public abstract class HibernateGenericDAO<T> implements AbstractDAO<T>{
 		}
     }
  
-    public List<T> all() {
+    @SuppressWarnings("unchecked")
+	public List<T> all() {
         return getSession().createQuery(("FROM " + getTypeClass().getName())).list();
     }
 	

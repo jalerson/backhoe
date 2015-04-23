@@ -9,11 +9,8 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.DAOFactory;
 import br.ufrn.ppgsc.backhoe.persistence.dao.DAOType;
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractChangedPathDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractCommitDAO;
-import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractMetricDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractMetricTypeDAO;
-import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
-import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
 
 public abstract class AbstractMiner implements Miner{

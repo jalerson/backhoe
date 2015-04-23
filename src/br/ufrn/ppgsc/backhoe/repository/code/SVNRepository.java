@@ -150,7 +150,7 @@ public class SVNRepository extends CodeRepository {
 		Collection<SVNLogEntry> svnLogEntries;
 		ArrayList<ChangedPath> changedPaths = new ArrayList<ChangedPath>();
 		try {
-			svnLogEntries = repository.log( new String[] { "" }, null, startRevision, endRevision, true, true);
+			svnLogEntries = repository.log( new String[] {""}, null, startRevision, endRevision, true, true);
 			
 			for (SVNLogEntry svnLogEntry : svnLogEntries) {
 				Collection<SVNLogEntryPath> svnLogEntryPaths = svnLogEntry.getChangedPaths().values();

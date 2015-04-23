@@ -165,8 +165,8 @@ public class CodeContributionMiner extends AbstractMiner {
 			
 			List<String> previousMethodBody = CodeRepositoryUtil.getContentByLines(correspondingPreviousMethod.toString());
 			List<String> currentMethodBody = CodeRepositoryUtil.getContentByLines(currentMethod.toString());
-			Patch patch = DiffUtils.diff(previousMethodBody, currentMethodBody);
-			List<Delta> deltas = patch.getDeltas();
+			Patch<String> patch = DiffUtils.diff(previousMethodBody, currentMethodBody);
+			List<Delta<String>> deltas = patch.getDeltas();
 			if(deltas.size() > 0) {
 				changedMethods++;
 			}
@@ -184,10 +184,10 @@ public class CodeContributionMiner extends AbstractMiner {
 		Integer added = 0;
 		Integer deleted = 0;
 		Integer changed = 0;
-		Patch patch = DiffUtils.diff(CodeRepositoryUtil.getContentByLines(previousContent), CodeRepositoryUtil.getContentByLines(currentContent));
-		List<Delta> deltas = patch.getDeltas();
+		Patch<String> patch = DiffUtils.diff(CodeRepositoryUtil.getContentByLines(previousContent), CodeRepositoryUtil.getContentByLines(currentContent));
+		List<Delta<String>> deltas = patch.getDeltas();
 		
-		for (Delta delta : deltas) {
+		for (Delta<String> delta : deltas) {
 			switch(delta.getType()) {
 			case DELETE:
 				List<String> deletedLines = (List<String>) delta.getOriginal().getLines();

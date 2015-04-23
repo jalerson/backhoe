@@ -17,7 +17,7 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateTaskTypeDAO;
 
 public class DAOFactory {
 	
-	public static AbstractDAO createDAO(DAOType type) throws DAONotFoundException {
+	public static AbstractDAO<?> createDAO(DAOType type) throws DAONotFoundException {
 		switch(type) {
 			case CHANGED_LINE: return new HibernateChangedLineDAO();
 			case CHANGED_PATH: return new HibernateChangedPathDAO();
