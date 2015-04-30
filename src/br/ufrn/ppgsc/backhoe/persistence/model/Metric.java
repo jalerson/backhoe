@@ -46,4 +46,10 @@ public class Metric extends Model {
 	public void setType(MetricType type) {
 		this.type = type;
 	}
+	@Override
+	public String toString() {
+		return "Metric [id=" + id + ", value=" + value + ", objectType="
+				+ objectType + ", objectId=" + objectId + ", type=" + type
+				+ "]";
+	}
 }

@@ -17,11 +17,21 @@ public class TaskPriority extends Model {
 	@OneToMany(mappedBy = "priority")
 	private List<Task> tasks;
 	
+	public TaskPriority(){}
+	
+	public TaskPriority(String name, Integer level){
+		this(name, level, null);
+	}
+	
+	public TaskPriority(String name, Integer level, List<Task> tasks) {
+		super();
+		this.name = name;
+		this.level = level;
+		this.tasks = tasks;
+	}
+	
 	public Long getId() {
 		return id;
-	}
-	public void setId(Long id) {
-		this.id = id;
 	}
 	public String getName() {
 		return name;

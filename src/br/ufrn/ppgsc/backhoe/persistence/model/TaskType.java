@@ -1,5 +1,6 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -16,6 +17,13 @@ public class TaskType extends Model {
 	@OneToMany(mappedBy = "type")
 	private List<Task> tasks;
 	
+	public TaskType(){
+		this(null);
+	}
+	public TaskType(String name) {
+		this.name = name;
+		this.tasks = new LinkedList<Task>();
+	}
 	public List<Task> getTasks() {
 		return tasks;
 	}

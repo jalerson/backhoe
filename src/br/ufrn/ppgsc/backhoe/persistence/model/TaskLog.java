@@ -6,6 +6,7 @@ import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
@@ -19,9 +20,11 @@ public class TaskLog extends Model {
 	@Type(type="text")
 	private String description;
 	private Date createdAt;
-	@ManyToOne
+	@ManyToOne//(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+//	@JoinColumn(name = "developer_id")
 	private Developer author;
-	@ManyToOne
+	@ManyToOne//(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinColumn(name = "task_id")
 	private Task task;
 	@ManyToOne
 	private TaskLogType type;
@@ -69,5 +72,10 @@ public class TaskLog extends Model {
 	}
 	public void setType(TaskLogType type) {
 		this.type = type;
+	}
+	@Override
+	public String toString() {
+		return "TaskLog [id=" + id + ", createdAt=" + createdAt + ", author="
+				+ author + ", task=" + task + "]";
 	}
 }

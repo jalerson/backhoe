@@ -5,6 +5,7 @@ import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
@@ -18,6 +19,7 @@ public class ChangedPath extends Model {
 	private String path;
 	private Character changeType;
 	@ManyToOne
+	@JoinColumn(name="commit_id")
 	private Commit commit;
 	@OneToMany(mappedBy = "changedPath")
 	private List<ChangedLine> changedLines;
@@ -59,5 +61,10 @@ public class ChangedPath extends Model {
 	}
 	public void setChangedLines(List<ChangedLine> changedLines) {
 		this.changedLines = changedLines;
+	}
+	@Override
+	public String toString() {
+		return "ChangedPath [id=" + id + ", changeType="
+				+ changeType + ", commitID=" + commit.getRevision() + "]";
 	}
 }

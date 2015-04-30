@@ -51,4 +51,9 @@ public class MetricType extends Model {
 	public void setMetrics(List<Metric> metrics) {
 		this.metrics = metrics;
 	}
+
+	@Override
+	public String toString() {
+		return "MetricType [id=" + id + ", slug=" + slug + "]";
+	}
 }

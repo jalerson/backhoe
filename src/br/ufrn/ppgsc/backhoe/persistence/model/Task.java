@@ -1,33 +1,49 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 
 import org.hibernate.annotations.Type;
 
 @Entity
 public class Task extends Model {
 	@Id
-	@GeneratedValue
+//	@GeneratedValue
 	private Long id;
 	private String title;
 	private Date createdAt;
 	@Type(type="text")
 	private String description;
-	@ManyToOne
+	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinColumn(name = "taskType_id")
 	private TaskType type;
-	@ManyToOne
+	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinColumn(name = "taskPriority_id")
 	private TaskPriority priority;
-	@ManyToOne
+	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinColumn(name = "taskStatus_id")
 	private TaskStatus status;
-	@ManyToOne
+	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinColumn(name = "project_id")
 	private Project project;
-	@ManyToOne
+	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@JoinColumn(name = "developer_id")
 	private Developer createdBy;
+	@OneToMany(mappedBy = "task", cascade=CascadeType.ALL)
+	private List<TaskLog> taskLogs;
+	
+	public Task(){
+		this.taskLogs = new LinkedList<TaskLog>();
+	}
+	
 	
 	public Developer getCreatedBy() {
 		return createdBy;
@@ -83,4 +99,16 @@ public class Task extends Model {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+	public List<TaskLog> getTaskLogs() {
+		return taskLogs;
+	}
+	public void setTaskLogs(List<TaskLog> taskLogs) {
+		this.taskLogs = taskLogs;
+	}
+	@Override
+	public String toString() {
+		return "Task [id=" + id + ", title=" + title + ", createdBy="
+				+ createdBy + "]";
+	}
+	
 }

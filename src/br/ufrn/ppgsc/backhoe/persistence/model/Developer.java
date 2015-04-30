@@ -1,5 +1,6 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -22,6 +23,13 @@ public class Developer extends Model {
 	private List<TaskLog> logs;
 	@OneToMany(mappedBy = "author")
 	private List<Commit> commits;
+	
+	public Developer(){
+		this.tasks = new LinkedList<Task>();
+		this.logs = new LinkedList<TaskLog>();
+		this.commits = new LinkedList<Commit>();
+		this.logs = new LinkedList<TaskLog>();
+	}
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -90,4 +98,10 @@ public class Developer extends Model {
 	public void setTasks(List<Task> tasks) {
 		this.tasks = tasks;
 	}
+
+	@Override
+	public String toString() {
+		return "Developer [id=" + id + ", codeRepositoryUsername="
+				+ codeRepositoryUsername + "]";
+	}	
 }

@@ -3,26 +3,28 @@ package br.ufrn.ppgsc.backhoe.persistence.model;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+
 @Entity
 public class Commit extends Model {
+	
 	@Id
-	@GeneratedValue
-	private Long id;
+	private Long revision;
 	private String comment;
 	private Date createdAt;
-	private Long revision;
+	
 	private String branch;
 	@ManyToOne
 	private Developer author;
 	@ManyToOne
 	private TaskLog log;
-	@OneToMany(mappedBy = "commit")
+	
+	@OneToMany(mappedBy = "commit", cascade=CascadeType.ALL)
 	private List<ChangedPath> changedPaths;
 	
 	public List<ChangedPath> getChangedPaths() {
@@ -31,12 +33,7 @@ public class Commit extends Model {
 	public void setChangedPaths(List<ChangedPath> changedPaths) {
 		this.changedPaths = changedPaths;
 	}
-	public Long getId() {
-		return id;
-	}
-	public void setId(Long id) {
-		this.id = id;
-	}
+
 	public String getComment() {
 		return comment;
 	}
@@ -72,5 +69,10 @@ public class Commit extends Model {
 	}
 	public void setLog(TaskLog log) {
 		this.log = log;
+	}
+	@Override
+	public String toString() {
+		return "Commit [revision=" + revision + ", author=" + author
+				+ ", changedPaths=" + changedPaths + "]";
 	}
 }
