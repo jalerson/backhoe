@@ -10,6 +10,7 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
 import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
+import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
 import br.ufrn.ppgsc.backhoe.util.CodeRepositoryUtil;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.ClassWrapper;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.MethodWrapper;
@@ -18,15 +19,18 @@ import difflib.DiffUtils;
 import difflib.Patch;
 
 public class CodeContributionMiner extends AbstractMiner {
-	
+
 	private MetricType addedLOCMetricType;
 	private MetricType changedLOCMetricType;
 	private MetricType deletedLOCMetricType;
 	private MetricType addedMethodsMetricType;
 	private MetricType changedMethodsMetricType;
 	
-	public CodeContributionMiner(CodeRepository repository, Date startDate, Date endDate, List<String> developers, List<String> ignoredPaths) {
-		super(repository, startDate, endDate, developers, ignoredPaths);
+	public CodeContributionMiner(CodeRepository codeRepository,
+			TaskRepository taskRepository, Date startDate, Date endDate,
+			List<String> developers, List<String> ignoredPaths) {
+		super(codeRepository, taskRepository, startDate, endDate, developers,
+				ignoredPaths);
 	}
 	
 	@Override
@@ -62,18 +66,19 @@ public class CodeContributionMiner extends AbstractMiner {
 			metricTypeDao.save(this.changedMethodsMetricType);
 		}
 		
-		return repository.connect();
+		return codeRepository.connect();
 	}
 
 	@Override
 	public void execute() {
+		
 		List<Commit> commits = null;
 		if(developers == null) {
-			commits = repository.findCommitsByTimeRange(startDate, endDate, true, ignoredPaths);
+			commits = codeRepository.findCommitsByTimeRange(startDate, endDate, true, ignoredPaths);
 		} else {
-			commits = repository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, ignoredPaths);
+			commits = codeRepository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, ignoredPaths);
 		}
-
+		
 		commitDao.save(commits);
 		
 		System.out.println("\nCalculating code contribution metrics...");
@@ -88,14 +93,13 @@ public class CodeContributionMiner extends AbstractMiner {
 				if(!(changedPath.getPath().toLowerCase().contains(".java")))
 					continue;
 				
-				String currentContent = repository.getFileContent(changedPath.getPath(), changedPath.getCommit().getRevision());
-				changedPath.setContent(currentContent);
-				changedPathDao.update(changedPath);
-				List<Long> fileRevisions = repository.getFileRevisions(changedPath.getPath(), 1L, changedPath.getCommit().getRevision());
+				String currentContent = changedPath.getContent();
+				
+				List<Long> fileRevisions = codeRepository.getFileRevisions(changedPath.getPath(), 1L, changedPath.getCommit().getRevision());
 				
 				if(fileRevisions.size() > 1) {
 					Long previousRevision = CodeRepositoryUtil.getPreviousRevision(changedPath.getCommit().getRevision(), fileRevisions);
-					String previousContent = repository.getFileContent(changedPath.getPath(), previousRevision);
+					String previousContent = codeRepository.getFileContent(changedPath.getPath(), previousRevision);
 					calculateLOCMetrics(changedPath, previousContent, currentContent);
 					calculateMethodMetrics(changedPath, previousContent, currentContent);
 				} else {

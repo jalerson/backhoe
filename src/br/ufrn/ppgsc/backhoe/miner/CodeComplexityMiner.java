@@ -10,6 +10,7 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
 import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
+import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
 import br.ufrn.ppgsc.backhoe.util.CodeRepositoryUtil;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.ClassWrapper;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.MethodWrapper;
@@ -17,10 +18,12 @@ import br.ufrn.ppgsc.backhoe.vo.wrapper.MethodWrapper;
 public class CodeComplexityMiner extends AbstractMiner {
 
 	private MetricType addedComplexityPerMethodMetricType;
-
-	public CodeComplexityMiner(CodeRepository repository, Date startDate,
-			Date endDate, List<String> developers, List<String> ignoredPaths) {
-		super(repository, startDate, endDate, developers, ignoredPaths);
+	
+	public CodeComplexityMiner(CodeRepository codeRepository,
+			TaskRepository taskRepository, Date startDate, Date endDate,
+			List<String> developers, List<String> ignoredPaths) {
+		super(codeRepository, taskRepository, startDate, endDate, developers,
+				ignoredPaths);
 	}
 
 	@Override
@@ -34,35 +37,29 @@ public class CodeComplexityMiner extends AbstractMiner {
 			metricTypeDao.save(this.addedComplexityPerMethodMetricType);
 		}
 
-		return repository.connect();
+		return codeRepository.connect();
 	}
 
 	@Override
 	public void execute() {
 
-		// TODO: The commits are being recovered and saved by each miner,
-		// A strategy is needed to allow recovery/save only the new commits
-		// that are not in database
-
 		List<Commit> commits = null;
 		if (developers == null) {
-			commits = repository.findCommitsByTimeRange(startDate, endDate,
+			commits = codeRepository.findCommitsByTimeRange(startDate, endDate,
 					true, ignoredPaths);
 		} else {
-			commits = repository.findCommitsByTimeRangeAndDevelopers(startDate,
+			commits = codeRepository.findCommitsByTimeRangeAndDevelopers(startDate,
 					endDate, developers, true, ignoredPaths);
 		}
 
-		commits.removeAll(commitDao.all());
 		commitDao.save(commits);
 		
 		calculateCodeComplexity(commits);
-		System.out.println("CodeComplexityMiner execut end!");
 	}
 
 	private void calculateCodeComplexity(List<Commit> commits) {
 		
-		System.out.println("\nCalculating code contribution metrics...");
+		System.out.println("\nCalculating code complexity metrics...");
 		
 		int processedCommits = 0;
 
@@ -75,12 +72,10 @@ public class CodeComplexityMiner extends AbstractMiner {
 				if (!(changedPath.getPath().toLowerCase().contains(".java"))) {
 					continue;
 				}
-
-				String currentContent = repository.getFileContent(changedPath
-						.getPath(), changedPath.getCommit().getRevision());
-				changedPath.setContent(currentContent);
-				changedPathDao.update(changedPath);
-				List<Long> fileRevisions = repository.getFileRevisions(
+				
+				String currentContent = changedPath.getContent();
+				
+				List<Long> fileRevisions = codeRepository.getFileRevisions(
 						changedPath.getPath(), 1L, changedPath.getCommit()
 								.getRevision());
 
@@ -88,7 +83,7 @@ public class CodeComplexityMiner extends AbstractMiner {
 					Long previousRevision = CodeRepositoryUtil
 							.getPreviousRevision(changedPath.getCommit()
 									.getRevision(), fileRevisions);
-					String previousContent = repository.getFileContent(
+					String previousContent = codeRepository.getFileContent(
 							changedPath.getPath(), previousRevision);
 					this.calculateComplexityMetricBetweenRevisions(changedPath,
 							previousContent, currentContent);

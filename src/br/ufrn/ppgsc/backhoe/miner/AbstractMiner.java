@@ -12,31 +12,37 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractCommitDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractMetricDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractMetricTypeDAO;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
+import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
 
 public abstract class AbstractMiner implements Miner{
 	
 	protected Date startDate;
 	protected Date endDate;
 	protected List<String> developers;
-	protected CodeRepository repository;
+	protected CodeRepository codeRepository;
+	protected TaskRepository taskRepository;
 	protected AbstractCommitDAO commitDao;
 	protected AbstractChangedPathDAO changedPathDao;
 	protected AbstractMetricDAO metricDao;
 	protected AbstractMetricTypeDAO metricTypeDao;
 	protected List<String> ignoredPaths;
 	
-	public AbstractMiner(CodeRepository repository, Date startDate, Date endDate, List<String> developers, List<String> ignoredPaths) {
+	public AbstractMiner(CodeRepository codeRepository, TaskRepository taskRepository, Date startDate, Date endDate, List<String> developers, List<String> ignoredPaths) {
 		this.startDate = startDate;
 		this.endDate = endDate;
 		this.developers = developers;
-		this.repository = repository;
+		this.codeRepository = codeRepository;
+		this.taskRepository = taskRepository;
 		this.ignoredPaths = ignoredPaths;
 	}
 	
 	public boolean setup() throws MissingParameterException {	
 		
-		if(repository == null) {
-			throw new MissingParameterException("Missing mandatory parameter: CodeRepository repository");
+		if(codeRepository == null) {
+			throw new MissingParameterException("Missing mandatory parameter: CodeRepository codeRepository");
+		}
+		if(taskRepository == null) {
+			throw new MissingParameterException("Missing mandatory parameter: TaskRepository taskRepository");
 		}
 		if(startDate == null) {
 			throw new MissingParameterException("Missing mandatory parameter: Date startDate");
