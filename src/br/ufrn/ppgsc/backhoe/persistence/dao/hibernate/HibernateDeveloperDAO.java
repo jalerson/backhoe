@@ -5,7 +5,7 @@ import org.hibernate.Query;
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractDeveloperDAO;
 import br.ufrn.ppgsc.backhoe.persistence.model.Developer;
 
-public class HibernateDeveloperDAO extends HibernateGenericDAO<Developer> implements AbstractDeveloperDAO {
+public class HibernateDeveloperDAO extends HibernateGenericDAO<Developer, Long> implements AbstractDeveloperDAO {
 
 	@Override
 	public Developer findByCodeRepositoryUsername(String username) {
@@ -13,5 +13,4 @@ public class HibernateDeveloperDAO extends HibernateGenericDAO<Developer> implem
 		query.setParameter("username", username);
 		return (Developer) query.uniqueResult();
 	}
-	
 }

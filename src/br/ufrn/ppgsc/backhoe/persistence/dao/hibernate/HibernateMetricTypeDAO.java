@@ -5,7 +5,7 @@ import org.hibernate.Query;
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractMetricTypeDAO;
 import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
 
-public class HibernateMetricTypeDAO extends HibernateGenericDAO<MetricType> implements AbstractMetricTypeDAO {
+public class HibernateMetricTypeDAO extends HibernateGenericDAO<MetricType, Long> implements AbstractMetricTypeDAO {
 
 	@Override
 	public MetricType findBySlug(String slug) {
