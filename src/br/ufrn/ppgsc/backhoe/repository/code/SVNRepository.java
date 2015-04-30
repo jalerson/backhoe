@@ -32,23 +32,26 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractDeveloperDAO;
 import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
 import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Developer;
+import br.ufrn.ppgsc.backhoe.repository.AbstractRepository;
 
-public class SVNRepository extends CodeRepository {
+public class SVNRepository extends AbstractRepository implements CodeRepository {
+	
 	private org.tmatesoft.svn.core.io.SVNRepository repository;
-	private String username;
-	private String password;
-	private String url;
 	private AbstractDeveloperDAO developerDao;
 	private AbstractCommitDAO commitDao;
-
-	public SVNRepository() {
+	
+	public SVNRepository(String username, String password, String url){
+		super(username, password, url);
 		try {
 			this.developerDao = (AbstractDeveloperDAO) DAOFactory.createDAO(DAOType.DEVELOPER);
 			this.commitDao = (AbstractCommitDAO) DAOFactory.createDAO(DAOType.COMMIT);
 		} catch (DAONotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public SVNRepository() {
+		this(null, null, null);
 	}
 
 	public boolean connect() throws MissingParameterException {
@@ -69,30 +72,15 @@ public class SVNRepository extends CodeRepository {
 			repository.setAuthenticationManager(authManager);
 			return true;
 		} catch (SVNException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return false;
 	}
 	
 	@Override
-	public List<Commit> findCommitsByTimeRangeAndDevelopers(Date startDate, Date endDate, List<String> developers, 
-			boolean collectChangedPaths, List<String> ignoredPaths) {
-		List<Commit> commits = findCommitsByTimeRange(startDate, endDate, collectChangedPaths, ignoredPaths);
-		System.out.print("Finding commits of an specifics developers ... ");
-		List<Commit> excludedCommits = new ArrayList<Commit>();
-		for (Commit commit : commits)
-			if(!developers.contains(commit.getAuthor().getCodeRepositoryUsername()))
-				excludedCommits.add(commit);
-		commits.removeAll(excludedCommits);
+	public List<Commit> findCommitsByTimeRangeAndDevelopers(Date startDate, Date endDate, List<String> developers, boolean collectChangedPaths, List<String> ignoredPaths) {
 		
-		System.out.println("Finished!\n"+commits.size()+" commits found!");
-		return commits;
-	}
-	
-	@Override
-	public List<Commit> findCommitsByTimeRange(Date startDate, Date endDate, boolean collectChangedPaths, List<String> ignoredPaths) {
-		ArrayList<Commit> commits = new ArrayList<Commit>();
+		List<Commit> commits = new ArrayList<Commit>();
 
 		SvnOperationFactory svnOperationFactory = new SvnOperationFactory();
 		svnOperationFactory.setAuthenticationManager(repository.getAuthenticationManager());
@@ -110,82 +98,66 @@ public class SVNRepository extends CodeRepository {
 			
 			System.out.println("Finished!\n"+svnLogEntries.size()+" commits found!");
 			
-			for (SVNLogEntry svnLogEntry : svnLogEntries) {
-				if(svnLogEntry.getDate().after(startDate) && svnLogEntry.getDate().before(endDate)) {
-					Commit commit = new Commit();
-					Developer developer = developerDao.findByCodeRepositoryUsername(svnLogEntry.getAuthor());
-					if(developer == null) {
-						developer = new Developer();
-						developer.setCodeRepositoryUsername(svnLogEntry.getAuthor());
-						developerDao.save(developer);
+			for (SVNLogEntry svnLogEntry : svnLogEntries){
+				
+				if(developers == null || developers != null && !developers.isEmpty() && developers.contains(svnLogEntry.getAuthor())){
+				
+					boolean betweenSearchRange = svnLogEntry.getDate().after(startDate) && svnLogEntry.getDate().before(endDate);
+					
+					if(betweenSearchRange){
+						Commit commit = commitDao.findByRevision(svnLogEntry.getRevision());
+						if(commit != null && commit.getChangedPaths() == null && collectChangedPaths)
+							commit.setChangedPaths(findChangedPathsBySVNLogEntry(svnLogEntry, commit));
+						else{
+							commit = new Commit();
+							Developer developer = developerDao.findByCodeRepositoryUsername(svnLogEntry.getAuthor());
+							if(developer == null) {
+								developer = new Developer();
+								developer.setCodeRepositoryUsername(svnLogEntry.getAuthor());
+								developerDao.save(developer);
+							}
+							commit.setAuthor(developer);
+							// commit.setBranch(???);
+							commit.setComment(svnLogEntry.getMessage());
+							commit.setCreatedAt(svnLogEntry.getDate());
+							// commit.setLog(???);
+							commit.setRevision(svnLogEntry.getRevision());
+							if(collectChangedPaths){
+								// Finding changedpaths
+								//commit.setChangedPaths(findChangedPathsByRevision(svnLogEntry.getRevision(), ignoredPaths));
+								commit.setChangedPaths(findChangedPathsBySVNLogEntry(svnLogEntry, commit));
+							}
+						}
+						commits.add(commit);
 					}
-					commit.setAuthor(developer);
-					// commit.setBranch(???);
-					commit.setComment(svnLogEntry.getMessage());
-					commit.setCreatedAt(svnLogEntry.getDate());
-					// commit.setLog(???);
-					commit.setRevision(svnLogEntry.getRevision());
-					if(collectChangedPaths) {
-						commit.setChangedPaths(findChangedPathsByRevision(svnLogEntry.getRevision(), ignoredPaths));
-					}
-					commits.add(commit);
 				}
 			}
+			if(developers != null)
+				System.out.println(commits.size()+" of "+svnLogEntries.size()+" belong to informed developers");
 			return commits;
 		} catch (SVNException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		return null;
 	}
 	
 	@Override
-	public List<ChangedPath> findChangedPathsByRevision(Long revision, List<String> ignoredPaths) {
-		return findChangedPathsByRevisionRage(revision, revision, ignoredPaths);
+	public List<Commit> findCommitsByTimeRange(Date startDate, Date endDate, boolean collectChangedPaths, List<String> ignoredPaths) {
+		return this.findCommitsByTimeRangeAndDevelopers(startDate, endDate, null, collectChangedPaths, ignoredPaths);
 	}
 	
-	@Override
-	public List<ChangedPath> findChangedPathsByRevisionRage(Long startRevision, Long endRevision, List<String> ignoredPaths) {
-		Collection<SVNLogEntry> svnLogEntries;
+	public List<ChangedPath> findChangedPathsBySVNLogEntry(SVNLogEntry svnLogEntry, Commit associatedCommit){
+		Collection<SVNLogEntryPath> svnLogEntryPaths = svnLogEntry.getChangedPaths().values();
 		ArrayList<ChangedPath> changedPaths = new ArrayList<ChangedPath>();
-		try {
-			svnLogEntries = repository.log( new String[] {""}, null, startRevision, endRevision, true, true);
-			
-			for (SVNLogEntry svnLogEntry : svnLogEntries) {
-				Collection<SVNLogEntryPath> svnLogEntryPaths = svnLogEntry.getChangedPaths().values();
-				for (SVNLogEntryPath svnLogEntryPath : svnLogEntryPaths) {
-					if(ignoredPaths.contains(svnLogEntryPath.getPath())) {
-						continue;
-					}
-					ChangedPath changedPath = new ChangedPath();
-					changedPath.setChangeType(svnLogEntryPath.getType());
-					Commit commit = commitDao.findByRevision(svnLogEntry.getRevision());
-					if(commit == null) {
-						commit = new Commit();
-						Developer developer = developerDao.findByCodeRepositoryUsername(svnLogEntry.getAuthor());
-						if(developer == null) {
-							developer = new Developer();
-							developer.setCodeRepositoryUsername(svnLogEntry.getAuthor());
-						}
-						commit.setAuthor(developer);
-						// commit.setBranch(???);
-						commit.setComment(svnLogEntry.getMessage());
-						commit.setCreatedAt(svnLogEntry.getDate());
-						// commit.setLog(???);
-						commit.setRevision(svnLogEntry.getRevision());
-					}
-					changedPath.setCommit(commit);
-					changedPath.setPath(svnLogEntryPath.getPath());
-					changedPaths.add(changedPath);
-				}
-			}
-			
-			return changedPaths;
-		} catch (SVNException e) {
-			e.printStackTrace();
+		for (SVNLogEntryPath svnLogEntryPath : svnLogEntryPaths) {
+			ChangedPath changedPath = new ChangedPath();
+			changedPath.setChangeType(svnLogEntryPath.getType());
+			changedPath.setCommit(associatedCommit);
+			changedPath.setPath(svnLogEntryPath.getPath());
+			changedPath.setContent(getFileContent(changedPath.getPath(), changedPath.getCommit().getRevision()));
+			changedPaths.add(changedPath);
 		}
-		return null;
+		return changedPaths;
 	}
 
 	@Override
@@ -215,29 +187,4 @@ public class SVNRepository extends CodeRepository {
 		}
 		return null;
 	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public String getURL() {
-		return url;
-	}
-
-	public void setURL(String url) {
-		this.url = url;
-	}
-
 }

@@ -1,6 +1,6 @@
 package br.ufrn.ppgsc.backhoe.exceptions;
 
-public class MissingParameterException extends Exception {
+public class MissingParameterException extends RuntimeException {
 
 	/**
 	 * 
