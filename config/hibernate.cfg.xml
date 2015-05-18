@@ -10,8 +10,8 @@
 		<!-- Database connection settings -->
 		<property name="connection.driver_class">com.mysql.jdbc.Driver</property>
 		<property name="connection.url">jdbc:mysql://localhost:3306/backhoe</property>
-		<property name="connection.username">your_username</property>
-		<property name="connection.password">your_password</property>
+		<property name="connection.username">root</property>
+		<property name="connection.password">81011236</property>
 
 		<!-- JDBC connection pool (use the built-in) -->
 		<property name="connection.pool_size">1</property>
