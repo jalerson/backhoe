@@ -10,6 +10,7 @@ public interface AbstractDAO<T, ID extends Serializable> {
 	void delete(T obj);
 	void save(List<T> commits);
 	boolean saveOrUpdateAll(List<T> objects);
+	void saveOrUpdate(T obj);
 	T findByID(ID id);
 	List<T> all();
 }

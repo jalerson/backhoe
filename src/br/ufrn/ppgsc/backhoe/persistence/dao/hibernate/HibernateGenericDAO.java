@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
@@ -35,7 +36,11 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
 	 
 	@SuppressWarnings("unchecked")
 	public T findByID(ID id){
-		return (T) getSession().load(getTypeClass(), id);
+		getSession().flush();
+    	getSession().clear();
+		Query query = getSession().createQuery("from "+getTypeClass().getName()+" where id = :id");
+		query.setParameter("id", id);
+		return (T) query.uniqueResult();
 	}
  
     public void save(T obj) {
@@ -45,6 +50,21 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
 	        getSession().flush();
 	        getSession().getTransaction().commit();
     	}catch (Exception e) {
+    		e.printStackTrace();
+			getSession().getTransaction().rollback();
+		}finally{
+			getSession().close();
+		}
+    }
+    
+    public void saveOrUpdate(T obj){
+    	try{
+	    	getSession().beginTransaction();
+	        getSession().saveOrUpdate(obj);
+	        getSession().flush();
+	        getSession().getTransaction().commit();
+    	}catch (Exception e) {
+    		e.printStackTrace();
 			getSession().getTransaction().rollback();
 		}finally{
 			getSession().close();
@@ -56,13 +76,14 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
     		getSession().beginTransaction();
         	getSession().merge(obj);
         	getSession().flush();
+        	getSession().clear();
         	getSession().getTransaction().commit();
     	}catch (Exception e) {
+    		e.printStackTrace();
 			getSession().getTransaction().rollback();
 		}finally{
 			getSession().close();
 		}
-		
     }
  
     public void delete(T obj) {

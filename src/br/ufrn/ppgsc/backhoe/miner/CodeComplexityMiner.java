@@ -10,14 +10,18 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
 import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
+import br.ufrn.ppgsc.backhoe.repository.task.IProjectRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
 import br.ufrn.ppgsc.backhoe.util.CodeRepositoryUtil;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.ClassWrapper;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.MethodWrapper;
 
 public class CodeComplexityMiner extends AbstractMiner {
+	
+	private final String minerSlug = "codeComplexityMiner";
 
-	private MetricType addedComplexityPerMethodMetricType;
+	private MetricType addedComplexityPerChangedPathMetricType;
+	private MetricType changedComplexityPerChangedPathMetricType;
 	
 	public CodeComplexityMiner(CodeRepository codeRepository,
 			TaskRepository taskRepository, Date startDate, Date endDate,
@@ -29,14 +33,21 @@ public class CodeComplexityMiner extends AbstractMiner {
 	@Override
 	public boolean setupMinerSpecific() throws MissingParameterException {
 
-		this.addedComplexityPerMethodMetricType = metricTypeDao
+		this.addedComplexityPerChangedPathMetricType = metricTypeDao
 				.findBySlug("complexity:added");
-		if (this.addedComplexityPerMethodMetricType == null) {
-			this.addedComplexityPerMethodMetricType = new MetricType(
+		if (this.addedComplexityPerChangedPathMetricType == null) {
+			this.addedComplexityPerChangedPathMetricType = new MetricType(
 					"Added Complexity", "complexity:added");
-			metricTypeDao.save(this.addedComplexityPerMethodMetricType);
+			metricTypeDao.save(this.addedComplexityPerChangedPathMetricType);
 		}
-
+		
+		this.changedComplexityPerChangedPathMetricType = metricTypeDao
+				.findBySlug("complexity:changed");
+		if (this.changedComplexityPerChangedPathMetricType == null) {
+			this.changedComplexityPerChangedPathMetricType = new MetricType(
+					"Changed Complexity", "complexity:changed");
+			metricTypeDao.save(this.changedComplexityPerChangedPathMetricType);
+		}
 		return codeRepository.connect();
 	}
 
@@ -51,10 +62,11 @@ public class CodeComplexityMiner extends AbstractMiner {
 			commits = codeRepository.findCommitsByTimeRangeAndDevelopers(startDate,
 					endDate, developers, true, ignoredPaths);
 		}
-
-		commitDao.save(commits);
 		
 		calculateCodeComplexity(commits);
+		
+//		taskRepository.connect();
+//		((IProjectRepository) taskRepository).associateTaskToCommitFromIProject(commits, developers);
 	}
 
 	private void calculateCodeComplexity(List<Commit> commits) {
@@ -64,7 +76,8 @@ public class CodeComplexityMiner extends AbstractMiner {
 		int processedCommits = 0;
 
 		for (Commit commit : commits) {
-			List<ChangedPath> changedPaths = commit.getChangedPaths();
+			
+			List<ChangedPath> changedPaths = changedPathDao.getChangedPathByCommitRevision(commit.getRevision());
 			for (ChangedPath changedPath : changedPaths) {
 				if (changedPath.getChangeType().equals('D')) {
 					continue;
@@ -73,6 +86,10 @@ public class CodeComplexityMiner extends AbstractMiner {
 					continue;
 				}
 				
+				// Verifica se ja foram executados metricas de complexidade para o changedpath informado
+				if(metricDao.existsMetric(changedPath.getId(), this.minerSlug))
+					continue;
+				
 				String currentContent = changedPath.getContent();
 				
 				List<Long> fileRevisions = codeRepository.getFileRevisions(
@@ -80,11 +97,13 @@ public class CodeComplexityMiner extends AbstractMiner {
 								.getRevision());
 
 				if (fileRevisions.size() > 1) {
-					Long previousRevision = CodeRepositoryUtil
-							.getPreviousRevision(changedPath.getCommit()
-									.getRevision(), fileRevisions);
-					String previousContent = codeRepository.getFileContent(
-							changedPath.getPath(), previousRevision);
+					Long previousRevision = CodeRepositoryUtil.
+							getPreviousRevision(changedPath.getCommit().getRevision(), fileRevisions);
+					String previousContent = codeRepository.getFileContent(changedPath.getPath(), previousRevision);
+					
+					if(currentContent == null || previousContent == null)
+						continue;
+					
 					this.calculateComplexityMetricBetweenRevisions(changedPath,
 							previousContent, currentContent);
 
@@ -109,17 +128,20 @@ public class CodeComplexityMiner extends AbstractMiner {
 			ClassWrapper classWrapper = new ClassWrapper(currentContent);
 			ArrayList<MethodWrapper> methods = (ArrayList<MethodWrapper>) classWrapper
 					.getMethods();
+			
+			float complexityAddedPerchangedPath = 0f;
 
 			for (MethodWrapper method : methods) {
-				Metric addedComplexityMetricPerMethod = new Metric();
-				addedComplexityMetricPerMethod.setObjectId(changedPath.getId());
-				addedComplexityMetricPerMethod.setObjectType("ChangedPath");
-				addedComplexityMetricPerMethod.setValue(new Integer(method
-						.getCyclomaticComplexity()).floatValue());
-				addedComplexityMetricPerMethod
-						.setType(addedComplexityPerMethodMetricType);
-				metricDao.save(addedComplexityMetricPerMethod);
+				complexityAddedPerchangedPath += new Integer(method.getCyclomaticComplexity()).floatValue();
 			}
+			
+			Metric addedComplexityMetricPerMethod = new Metric();
+			addedComplexityMetricPerMethod.setObjectId(changedPath.getId());
+			addedComplexityMetricPerMethod.setObjectType("ChangedPath");
+			addedComplexityMetricPerMethod.setValue(complexityAddedPerchangedPath);
+			addedComplexityMetricPerMethod.setType(addedComplexityPerChangedPathMetricType);
+			addedComplexityMetricPerMethod.setMinerSlug(this.minerSlug);
+			metricDao.save(addedComplexityMetricPerMethod);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -137,6 +159,9 @@ public class CodeComplexityMiner extends AbstractMiner {
 
 		ArrayList<MethodWrapper> currentMethods = (ArrayList<MethodWrapper>) currentClass
 				.getMethods();
+		
+		float complexityAddedPerchangedPath = 0f,
+		 	  complexityChangedPerChangedPath = 0f;
 
 		for (MethodWrapper currentMethod : currentMethods) {
 
@@ -144,11 +169,13 @@ public class CodeComplexityMiner extends AbstractMiner {
 			MethodWrapper previousMethod = getPreviousMethod(previousMethods,
 					currentMethod);
 
-			float cyclomaticCompexity = 0f;
+//			float cyclomaticCompexity = 0f;
+			float addedComplexity = 0f,
+				  changedComplexity = 0f;
 
 			// If it does not, it means that it was created
 			if (previousMethod == null) {
-				cyclomaticCompexity = currentMethod.getCyclomaticComplexity();
+				addedComplexity = currentMethod.getCyclomaticComplexity();
 			} else {
 				// verifies that the complexity of the method changed before and
 				// after change
@@ -162,7 +189,7 @@ public class CodeComplexityMiner extends AbstractMiner {
 					// the value of the cyclomatic complexity remains at zero
 					if (currentMethod.getCyclomaticComplexity() >= previousMethod
 							.getCyclomaticComplexity())
-						cyclomaticCompexity = currentMethod
+						changedComplexity = currentMethod
 								.getCyclomaticComplexity()
 								- previousMethod.getCyclomaticComplexity();
 				} else {
@@ -170,15 +197,24 @@ public class CodeComplexityMiner extends AbstractMiner {
 					continue;
 				}
 			}
-
-			Metric addedComplexityMetricPerMethod = new Metric();
-			addedComplexityMetricPerMethod.setObjectId(changedPath.getId());
-			addedComplexityMetricPerMethod.setObjectType("ChangedPath");
-			addedComplexityMetricPerMethod.setValue(cyclomaticCompexity);
-			addedComplexityMetricPerMethod
-					.setType(addedComplexityPerMethodMetricType);
-			metricDao.save(addedComplexityMetricPerMethod);
+			complexityAddedPerchangedPath += addedComplexity;
+			complexityChangedPerChangedPath += changedComplexity;
 		}
+		Metric addedComplexityMetricPerMethod = new Metric();
+		addedComplexityMetricPerMethod.setObjectId(changedPath.getId());
+		addedComplexityMetricPerMethod.setObjectType("ChangedPath");
+		addedComplexityMetricPerMethod.setValue(complexityAddedPerchangedPath);
+		addedComplexityMetricPerMethod.setType(addedComplexityPerChangedPathMetricType);
+		addedComplexityMetricPerMethod.setMinerSlug(this.minerSlug);
+		metricDao.save(addedComplexityMetricPerMethod);
+		
+		Metric changedComplexityMetricPerMethod = new Metric();
+		changedComplexityMetricPerMethod.setObjectId(changedPath.getId());
+		changedComplexityMetricPerMethod.setObjectType("ChangedPath");
+		changedComplexityMetricPerMethod.setValue(complexityChangedPerChangedPath);
+		changedComplexityMetricPerMethod.setType(changedComplexityPerChangedPathMetricType);
+		changedComplexityMetricPerMethod.setMinerSlug(this.minerSlug);
+		metricDao.save(changedComplexityMetricPerMethod);
 	}
 
 	// Helper method that search the method before the change

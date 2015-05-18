@@ -25,10 +25,31 @@ public class Developer extends Model {
 	private List<Commit> commits;
 	
 	public Developer(){
-		this.tasks = new LinkedList<Task>();
-		this.logs = new LinkedList<TaskLog>();
-		this.commits = new LinkedList<Commit>();
-		this.logs = new LinkedList<TaskLog>();
+		this(null, null, null);
+	}
+	
+	public Developer(String name, String email, String codeRepositoryUsername){
+		this(name, email, codeRepositoryUsername, null);
+	}
+	
+	public Developer(String name, String email, String codeRepositoryUsername, String taskRepositoryUsername){
+		this(name, email, codeRepositoryUsername, taskRepositoryUsername,
+			 new LinkedList<Task>(),
+			 new LinkedList<TaskLog>(),
+			 new LinkedList<Commit>());
+	}
+	
+	public Developer(String name, String email, String codeRepositoryUsername,
+			String taskRepositoryUsername, List<Task> tasks,
+			List<TaskLog> logs, List<Commit> commits) {
+		super();
+		this.name = name;
+		this.email = email;
+		this.codeRepositoryUsername = codeRepositoryUsername;
+		this.taskRepositoryUsername = taskRepositoryUsername;
+		this.tasks = tasks;
+		this.logs = logs;
+		this.commits = commits;
 	}
 	
 	@Override

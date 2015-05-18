@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
@@ -24,7 +25,7 @@ public class Commit extends Model {
 	@ManyToOne
 	private TaskLog log;
 	
-	@OneToMany(mappedBy = "commit", cascade=CascadeType.ALL)
+	@OneToMany(fetch = FetchType.EAGER, mappedBy = "commit", cascade=CascadeType.ALL)
 	private List<ChangedPath> changedPaths;
 	
 	public List<ChangedPath> getChangedPaths() {
@@ -72,7 +73,7 @@ public class Commit extends Model {
 	}
 	@Override
 	public String toString() {
-		return "Commit [revision=" + revision + ", author=" + author
-				+ ", changedPaths=" + changedPaths + "]";
+		return "Commit [revision=" + revision + ", author=" + author + ", log="
+				+ log + "]";
 	}
 }

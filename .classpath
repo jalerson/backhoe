@@ -32,5 +32,6 @@
 	<classpathentry kind="lib" path="lib/org.eclipse.equinox.preferences_3.2.301.R35x_v20091117.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.osgi_3.5.2.R35x_v20100126.jar"/>
 	<classpathentry kind="lib" path="lib/postgresql-9.4-1201.jdbc4.jar"/>
+	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.35-bin.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

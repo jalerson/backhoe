@@ -11,6 +11,7 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateMetricTypeDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateProjectDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateTaskDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateTaskLogDAO;
+import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateTaskLogTypeDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateTaskPriorityDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateTaskStatusDAO;
 import br.ufrn.ppgsc.backhoe.persistence.dao.hibernate.HibernateTaskTypeDAO;
@@ -31,6 +32,7 @@ public class DAOFactory {
 			case TASK_PRIORITY: return new HibernateTaskPriorityDAO();
 			case TASK_STATUS: return new HibernateTaskStatusDAO();
 			case TASK_TYPE: return new HibernateTaskTypeDAO();
+			case TASK_LOG_TYPE: return new HibernateTaskLogTypeDAO();
 			default: throw new DAONotFoundException("DAO not found!");
 		}
 	}

@@ -4,26 +4,31 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
 public class TaskStatus extends Model {
+	
 	@Id
-	@GeneratedValue
 	private Long id;
 	private String name;
 	@OneToMany(mappedBy = "status")
 	private List<Task> tasks;
 	
 	public TaskStatus(){
-		this(null);
+		this(null, null);
 	}
 	
-	public TaskStatus(String name){
+	public TaskStatus(Long id, String name) {
+		this(id, name, new LinkedList<Task>());
+	}
+	
+	public TaskStatus(Long id, String name, List<Task> tasks) {
+		super();
+		this.id = id;
 		this.name = name;
-		this.tasks = new LinkedList<Task>();
+		this.tasks = tasks;
 	}
 	
 	public List<Task> getTasks() {
@@ -43,5 +48,10 @@ public class TaskStatus extends Model {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	@Override
+	public String toString() {
+		return "TaskStatus [id=" + id + ", name=" + name + "]";
 	}
 }

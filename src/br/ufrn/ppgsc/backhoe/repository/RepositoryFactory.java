@@ -1,6 +1,7 @@
 package br.ufrn.ppgsc.backhoe.repository;
 
 import br.ufrn.ppgsc.backhoe.repository.code.SVNRepository;
+import br.ufrn.ppgsc.backhoe.repository.local.LocalRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.IProjectRepository;
 
 public class RepositoryFactory {
@@ -11,6 +12,8 @@ public class RepositoryFactory {
 				return new SVNRepository();
 			case IPROJECT:
 				return new IProjectRepository();
+			case LOCAL:
+				return new LocalRepository();
 			default:
 				return null;
 		}

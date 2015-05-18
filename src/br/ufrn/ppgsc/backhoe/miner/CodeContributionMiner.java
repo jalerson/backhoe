@@ -10,6 +10,7 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
 import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
+import br.ufrn.ppgsc.backhoe.repository.task.IProjectRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
 import br.ufrn.ppgsc.backhoe.util.CodeRepositoryUtil;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.ClassWrapper;
@@ -19,6 +20,8 @@ import difflib.DiffUtils;
 import difflib.Patch;
 
 public class CodeContributionMiner extends AbstractMiner {
+	
+	private final String minerSlug = "codeContributionMiner";
 
 	private MetricType addedLOCMetricType;
 	private MetricType changedLOCMetricType;
@@ -79,18 +82,22 @@ public class CodeContributionMiner extends AbstractMiner {
 			commits = codeRepository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, ignoredPaths);
 		}
 		
-		commitDao.save(commits);
-		
 		System.out.println("\nCalculating code contribution metrics...");
 		
 		int processedCommits = 0;
 		
 		for (Commit commit : commits) {
-			List<ChangedPath> changedPaths = commit.getChangedPaths();
+
+			List<ChangedPath> changedPaths = changedPathDao.getChangedPathByCommitRevision(commit.getRevision());
+			
 			for (ChangedPath changedPath : changedPaths) {
-				if(changedPath.getChangeType().equals('D'))
-					continue;
-				if(!(changedPath.getPath().toLowerCase().contains(".java")))
+				
+				if(changedPath.getChangeType().equals('D')) continue;
+				
+				if(!(changedPath.getPath().toLowerCase().contains(".java"))) continue;
+				
+				// Verifica se ja foram executados metricas de contribuicao para o changedpath informado
+				if(metricDao.existsMetric(changedPath.getId(), this.minerSlug))
 					continue;
 				
 				String currentContent = changedPath.getContent();
@@ -99,10 +106,17 @@ public class CodeContributionMiner extends AbstractMiner {
 				
 				if(fileRevisions.size() > 1) {
 					Long previousRevision = CodeRepositoryUtil.getPreviousRevision(changedPath.getCommit().getRevision(), fileRevisions);
-					String previousContent = codeRepository.getFileContent(changedPath.getPath(), previousRevision);
+					String previousContent = null;
+					
+					previousContent = codeRepository.getFileContent(changedPath.getPath(), previousRevision);
+					
+					if(currentContent == null || previousContent == null)
+						continue;
+					
 					calculateLOCMetrics(changedPath, previousContent, currentContent);
 					calculateMethodMetrics(changedPath, previousContent, currentContent);
 				} else {
+					
 					ClassWrapper newClass = new ClassWrapper(currentContent);
 					List<String> lines = CodeRepositoryUtil.getContentByLines(currentContent);
 					
@@ -119,6 +133,7 @@ public class CodeContributionMiner extends AbstractMiner {
 					addedLocMetric.setObjectType("ChangedPath");
 					addedLocMetric.setValue(added.floatValue());
 					addedLocMetric.setType(addedLOCMetricType);
+					addedLocMetric.setMinerSlug(this.minerSlug);
 					metricDao.save(addedLocMetric);
 					
 					Metric addedMethodsMetric = new Metric();
@@ -126,12 +141,16 @@ public class CodeContributionMiner extends AbstractMiner {
 					addedMethodsMetric.setObjectType("ChangedPath");
 					addedMethodsMetric.setValue(new Float(newClass.getMethods().size()));
 					addedMethodsMetric.setType(addedMethodsMetricType);
+					addedMethodsMetric.setMinerSlug(this.minerSlug);
 					metricDao.save(addedMethodsMetric);
 				}
 			}
 			System.out.println("[" + ++processedCommits + "] of [" + commits.size() + "] processed commits.");
 		}
 		System.out.println("Code Contribution Miner execut end!\n");
+		
+//		taskRepository.connect();
+//		((IProjectRepository) taskRepository).associateTaskToCommitFromIProject(commits, developers);
 	}
 	
 	private void calculateMethodMetrics(ChangedPath changedPath, String previousContent, String currentContent) {
@@ -154,6 +173,7 @@ public class CodeContributionMiner extends AbstractMiner {
 		addedMethodsMetric.setObjectType("ChangedPath");
 		addedMethodsMetric.setValue(addedMethods.floatValue());
 		addedMethodsMetric.setType(addedMethodsMetricType);
+		addedMethodsMetric.setMinerSlug(this.minerSlug);
 		metricDao.save(addedMethodsMetric);
 		
 		for(MethodWrapper currentMethod : currentMethods) {
@@ -181,6 +201,7 @@ public class CodeContributionMiner extends AbstractMiner {
 		changedMethodsMetric.setObjectType("ChangedPath");
 		changedMethodsMetric.setValue(changedMethods.floatValue());
 		changedMethodsMetric.setType(changedMethodsMetricType);
+		changedMethodsMetric.setMinerSlug(this.minerSlug);
 		metricDao.save(changedMethodsMetric);
 	}
 
@@ -228,6 +249,7 @@ public class CodeContributionMiner extends AbstractMiner {
 		addedLocMetric.setObjectType("ChangedPath");
 		addedLocMetric.setValue(added.floatValue());
 		addedLocMetric.setType(addedLOCMetricType);
+		addedLocMetric.setMinerSlug(this.minerSlug);
 		metricDao.save(addedLocMetric);
 		
 		Metric changedLocMetric = new Metric();
@@ -235,6 +257,7 @@ public class CodeContributionMiner extends AbstractMiner {
 		changedLocMetric.setObjectType("ChangedPath");
 		changedLocMetric.setValue(changed.floatValue());
 		changedLocMetric.setType(changedLOCMetricType);
+		changedLocMetric.setMinerSlug(this.minerSlug);
 		metricDao.save(changedLocMetric);
 		
 		Metric deletedLocMetric = new Metric();
@@ -242,6 +265,7 @@ public class CodeContributionMiner extends AbstractMiner {
 		deletedLocMetric.setObjectType("ChangedPath");
 		deletedLocMetric.setValue(deleted.floatValue());
 		deletedLocMetric.setType(deletedLOCMetricType);
+		deletedLocMetric.setMinerSlug(this.minerSlug);
 		metricDao.save(deletedLocMetric);
 	}
 }

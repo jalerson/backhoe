@@ -4,26 +4,33 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
 public class TaskType extends Model {
+	
 	@Id
-	@GeneratedValue
 	private Long id;
 	private String name;
 	@OneToMany(mappedBy = "type")
 	private List<Task> tasks;
 	
 	public TaskType(){
-		this(null);
+		this(null, null);
 	}
-	public TaskType(String name) {
+	
+	public TaskType(Long id, String name) {
+		this(id, name, new LinkedList<Task>());
+	}
+	
+	public TaskType(Long id, String name, List<Task> tasks) {
+		super();
+		this.id = id;
 		this.name = name;
-		this.tasks = new LinkedList<Task>();
+		this.tasks = tasks;
 	}
+	
 	public List<Task> getTasks() {
 		return tasks;
 	}
@@ -41,5 +48,10 @@ public class TaskType extends Model {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	@Override
+	public String toString() {
+		return "TaskType [id=" + id + ", name=" + name + "]";
 	}
 }

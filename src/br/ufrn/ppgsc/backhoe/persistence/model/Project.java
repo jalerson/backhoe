@@ -1,20 +1,35 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
 public class Project extends Model {
+	
 	@Id
-	@GeneratedValue
 	private Long id;
 	private String name;
 	@OneToMany(mappedBy = "project")
 	private List<Task> tasks;
+	
+	public Project(){
+		this(null, null);
+	}
+	
+	public Project(Long id, String name) {
+		this(id, name, new LinkedList<Task>());
+	}
+	
+	public Project(Long id, String name, List<Task> tasks) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.tasks = tasks;
+	}
 	
 	public Long getId() {
 		return id;
@@ -33,5 +48,10 @@ public class Project extends Model {
 	}
 	public void setTasks(List<Task> tasks) {
 		this.tasks = tasks;
+	}
+	
+	@Override
+	public String toString() {
+		return "Project [id=" + id + ", name=" + name + "]";
 	}
 }

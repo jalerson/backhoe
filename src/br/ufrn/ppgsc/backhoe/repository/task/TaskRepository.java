@@ -8,6 +8,6 @@ import br.ufrn.ppgsc.backhoe.repository.Repository;
 
 public interface TaskRepository extends Repository{
 	
-	List<TaskLog> findLogs(Date startDate, Date endDate, long[] systems);
+	List<TaskLog> findLogs(Date startDate, Date endDate, long[] systems, List<String> developers);
 
 }

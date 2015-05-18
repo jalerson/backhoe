@@ -4,5 +4,5 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractTaskDAO;
 import br.ufrn.ppgsc.backhoe.persistence.model.Task;
 
 public class HibernateTaskDAO extends HibernateGenericDAO<Task, Long> implements AbstractTaskDAO {
-
+	
 }

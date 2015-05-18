@@ -4,5 +4,6 @@ public enum RepositoryType {
 	SVN,
 	GIT,
 	GITHUB,
-	IPROJECT
+	IPROJECT,
+	LOCAL
 }

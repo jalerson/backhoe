@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -15,35 +14,62 @@ import org.hibernate.annotations.Type;
 
 @Entity
 public class Task extends Model {
+	
 	@Id
-//	@GeneratedValue
 	private Long id;
 	private String title;
 	private Date createdAt;
 	@Type(type="text")
 	private String description;
-	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@ManyToOne
 	@JoinColumn(name = "taskType_id")
 	private TaskType type;
-	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@ManyToOne
 	@JoinColumn(name = "taskPriority_id")
 	private TaskPriority priority;
-	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
+	@ManyToOne
 	@JoinColumn(name = "taskStatus_id")
 	private TaskStatus status;
-	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
-	@JoinColumn(name = "project_id")
+	@ManyToOne
 	private Project project;
-	@ManyToOne(cascade={CascadeType.PERSIST, CascadeType.MERGE})
-	@JoinColumn(name = "developer_id")
+	@ManyToOne
 	private Developer createdBy;
-	@OneToMany(mappedBy = "task", cascade=CascadeType.ALL)
+	@OneToMany(mappedBy = "task")
 	private List<TaskLog> taskLogs;
 	
 	public Task(){
+		this(null, null);
+	}
+	
+	public Task(Long id, String title) {
+		super();
+		this.id = id;
+		this.title = title;
 		this.taskLogs = new LinkedList<TaskLog>();
 	}
 	
+	public Task(Long id, String title, Date createdAt, String description,
+			TaskType type, TaskPriority priority, TaskStatus status,
+			Project project, Developer createdBy){
+		this(id, title, createdAt, description, type, priority, 
+			 status, project, createdBy, new LinkedList<TaskLog>());
+	}
+
+	public Task(Long id, String title, Date createdAt, String description,
+			TaskType type, TaskPriority priority, TaskStatus status,
+			Project project, Developer createdBy, List<TaskLog> taskLogs) {
+		super();
+		this.id = id;
+		this.title = title;
+		this.createdAt = createdAt;
+		this.description = description;
+		this.type = type;
+		this.priority = priority;
+		this.status = status;
+		this.project = project;
+		this.createdBy = createdBy;
+		this.taskLogs = taskLogs;
+	}
 	
 	public Developer getCreatedBy() {
 		return createdBy;

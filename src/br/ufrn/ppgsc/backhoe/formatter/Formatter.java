@@ -1,10 +1,10 @@
-package br.ufrn.ppgsc.backhoe.miner;
+package br.ufrn.ppgsc.backhoe.formatter;
 
 import br.ufrn.ppgsc.backhoe.exceptions.MissingParameterException;
 
-public interface Miner {
+public interface Formatter {
 	
 	boolean setup() throws MissingParameterException; 
-	void execute();
-	
+	void format();
+
 }

@@ -1,12 +1,11 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
@@ -14,23 +13,42 @@ import org.hibernate.annotations.Type;
 
 @Entity
 public class TaskLog extends Model {
+	
 	@Id
-	@GeneratedValue
 	private Long id;
 	@Type(type="text")
 	private String description;
 	private Date createdAt;
-	@ManyToOne//(cascade={CascadeType.PERSIST, CascadeType.MERGE})
-//	@JoinColumn(name = "developer_id")
+	@ManyToOne
 	private Developer author;
-	@ManyToOne//(cascade={CascadeType.PERSIST, CascadeType.MERGE})
-	@JoinColumn(name = "task_id")
+	@ManyToOne
 	private Task task;
 	@ManyToOne
 	private TaskLogType type;
 	@OneToMany(mappedBy = "log")
 	private List<Commit> commits;
 	
+	public TaskLog(){
+		this.commits = new LinkedList<Commit>();
+	}
+	
+	public TaskLog(Long id, String description, Date createdAt,
+			Developer author, Task task, TaskLogType type) {
+		this(id, description, createdAt, author, task, type, new LinkedList<Commit>());
+	}
+
+	public TaskLog(Long id, String description, Date createdAt,
+			Developer author, Task task, TaskLogType type, List<Commit> commits) {
+		super();
+		this.id = id;
+		this.description = description;
+		this.createdAt = createdAt;
+		this.author = author;
+		this.task = task;
+		this.type = type;
+		this.commits = commits;
+	}
+
 	public List<Commit> getCommits() {
 		return commits;
 	}
