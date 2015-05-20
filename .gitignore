@@ -14,3 +14,4 @@ config/svn.properties
 config/postgres.properties
 /bin/
 /results
+/config
