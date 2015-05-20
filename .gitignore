@@ -13,3 +13,4 @@ hs_err_pid*
 config/svn.properties
 config/postgres.properties
 /bin/
+/results
