@@ -9,7 +9,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
-public class Developer extends Model {
+public class Developer implements Model {
 	@Id
 	@GeneratedValue
 	private Long id;

@@ -8,7 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
 @Entity
-public class Metric extends Model {
+public class Metric implements Model {
 	@Id
 	@GeneratedValue
 	private Long id;

@@ -36,8 +36,8 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
 	 
 	@SuppressWarnings("unchecked")
 	public T findByID(ID id){
+		getSession().clear();
 		getSession().flush();
-    	getSession().clear();
 		Query query = getSession().createQuery("from "+getTypeClass().getName()+" where id = :id");
 		query.setParameter("id", id);
 		return (T) query.uniqueResult();

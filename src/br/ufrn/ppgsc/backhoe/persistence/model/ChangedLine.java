@@ -7,7 +7,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
 @Entity
-public class ChangedLine extends Model {
+public class ChangedLine implements Model {
 	@Id
 	@GeneratedValue
 	private Long id;

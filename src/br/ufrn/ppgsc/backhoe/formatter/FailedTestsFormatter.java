@@ -9,9 +9,9 @@ import java.util.Map;
 
 import br.ufrn.ppgsc.backhoe.repository.local.LocalRepository;
 
-public class BugFixContributionFormatter extends AbstractFormatter {
+public class FailedTestsFormatter extends AbstractFormatter {
 
-	public BugFixContributionFormatter(Date startDate, Date endDate,
+	public FailedTestsFormatter(Date startDate, Date endDate,
 			List<String> developers, LocalRepository localRepository,
 			String minerName, String systemName) {
 		super(startDate, endDate, developers, localRepository, minerName, systemName);
@@ -21,7 +21,7 @@ public class BugFixContributionFormatter extends AbstractFormatter {
 	@Override
 	public void format() {
 		String contentFile = generateContentFileCSV(startDate, endDate, developers);
-		String fileName = systemName+"_"+getHumanizedStartDate()+"_"+getHumanizedEndDate()+"_BugFixContribution.csv";
+		String fileName = systemName+"_"+getHumanizedStartDate()+"_"+getHumanizedEndDate()+"_FiledTests.csv";
 		String filePathAndName = getDirPath()+ "/" + fileName;
 		createCSV(contentFile, filePathAndName);
 	}
@@ -29,8 +29,8 @@ public class BugFixContributionFormatter extends AbstractFormatter {
 	public String generateContentFileCSV(Date startDateInterval, Date endDateInterval, List<String> developers){
 		String sql = "SELECT d.codeRepositoryUsername, m.value from Metric m, Developer d " +
 					 "where m.objectId = d.id and " +
-					 "m.minerSlug = 'bugFixContributionMiner' and " +
-					 "m.startDateInterval = ':startDateInterval' and "+
+					 "m.minerSlug = 'failedTestsMiner' and " +
+					 "m.startDateInterval = ':startDateInterval' and " +
 					 "m.endDateInterval = ':endDateInterval' and " +
 					 "d.id in (select id from Developer where codeRepositoryUsername in :developerLogins);";
 		sql = sql.replace(":startDateInterval", startDateInterval.toString());
@@ -44,21 +44,17 @@ public class BugFixContributionFormatter extends AbstractFormatter {
 		
 		try {
 			ResultSet rs = localRepository.getConection().createStatement().executeQuery(sql);
-			int bugsFixedTotal = 0;
 		  
 			while (rs.next()){
 				bugFixMAP.put(rs.getString("codeRepositoryUsername"), rs.getInt("value"));
-				bugsFixedTotal += rs.getInt("value");
 			}
 			
-			String str = "DEVELOPER;BUGFIXES;BUGFIXES(%)\n";
+			String str = "DEVELOPER;FAILED TESTS\n";
 			for (int i = 0; i < developers.size(); i++) {
 				String codeRepositoryUsername = developers.get(i);
 				Integer value = bugFixMAP.get(codeRepositoryUsername);
-				Float percent = (float) value / (float) bugsFixedTotal;
 				str += "\""+developers.get(i)+"\";"; // developerUsername
 				str += "\""+value+"\";"; 
-				str += "\""+percent+"\";";
 				str += "\n";
 			}
 			return str;

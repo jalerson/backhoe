@@ -10,7 +10,6 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
 import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
-import br.ufrn.ppgsc.backhoe.repository.task.IProjectRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
 import br.ufrn.ppgsc.backhoe.util.CodeRepositoryUtil;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.ClassWrapper;
@@ -23,10 +22,10 @@ public class CodeComplexityMiner extends AbstractMiner {
 	private MetricType addedComplexityPerChangedPathMetricType;
 	private MetricType changedComplexityPerChangedPathMetricType;
 	
-	public CodeComplexityMiner(CodeRepository codeRepository,
+	public CodeComplexityMiner(Integer system, CodeRepository codeRepository,
 			TaskRepository taskRepository, Date startDate, Date endDate,
 			List<String> developers, List<String> ignoredPaths) {
-		super(codeRepository, taskRepository, startDate, endDate, developers,
+		super(system, codeRepository, taskRepository, startDate, endDate, developers,
 				ignoredPaths);
 	}
 

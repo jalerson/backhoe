@@ -9,7 +9,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
-public class MetricType extends Model {
+public class MetricType implements Model {
 	@Id
 	@GeneratedValue
 	private Long id;
@@ -31,6 +31,10 @@ public class MetricType extends Model {
 
 	public Long getId() {
 		return id;
+	}
+	
+	public void setId(Long id){
+		this.id = id;
 	}
 	
 	public String getName() {

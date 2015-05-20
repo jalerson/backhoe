@@ -12,7 +12,7 @@ import javax.persistence.OneToMany;
 import org.hibernate.annotations.Type;
 
 @Entity
-public class TaskLog extends Model {
+public class TaskLog implements Model {
 	
 	@Id
 	private Long id;

@@ -8,7 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
-public class TaskPriority extends Model {
+public class TaskPriority implements Model {
 	
 	@Id
 	private Long id;
@@ -32,9 +32,16 @@ public class TaskPriority extends Model {
 		this.tasks = tasks;
 	}
 	
+	@Override
 	public Long getId() {
 		return id;
 	}
+	
+	@Override
+	public void setId(Long id) {
+		this.id = id;
+	}
+	
 	public String getName() {
 		return name;
 	}

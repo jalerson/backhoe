@@ -1,5 +1,8 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
-public abstract class Model {
+public interface Model {
+	
+	Long getId();
+	void setId(Long id);
 
 }

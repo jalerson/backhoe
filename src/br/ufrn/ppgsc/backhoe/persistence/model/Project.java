@@ -8,7 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
-public class Project extends Model {
+public class Project implements Model {
 	
 	@Id
 	private Long id;

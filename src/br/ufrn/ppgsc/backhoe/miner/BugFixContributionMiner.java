@@ -24,10 +24,10 @@ public class BugFixContributionMiner extends AbstractMiner {
 	private AbstractDeveloperDAO developerDao;
 	private MetricType bugFixContributionPerDeveloperByPeriod;
 
-	public BugFixContributionMiner(CodeRepository codeRepository,
+	public BugFixContributionMiner(Integer system, CodeRepository codeRepository,
 			TaskRepository taskRepository, Date startDate, Date endDate,
 			List<String> developers, List<String> ignoredPaths) {
-		super(codeRepository, taskRepository, startDate, endDate, developers,
+		super(system, codeRepository, taskRepository, startDate, endDate, developers,
 				ignoredPaths);
 		try {
 			this.developerDao = (AbstractDeveloperDAO) DAOFactory.createDAO(DAOType.DEVELOPER);
@@ -53,9 +53,8 @@ public class BugFixContributionMiner extends AbstractMiner {
 
 	@Override
 	public void execute() {
-		Integer system = 2;//config.getSystem();
 		
-		System.out.println("\nCalculating Bug Fix Contribution Metrics...");
+		System.out.println("Calculating Bug Fix Contribution Metrics...");
 		System.out.print("Researching logs in iproject... \n");
 		List<TaskLog> logs = taskRepository.findLogs(startDate, endDate, new long[]{ system }, developers);
 		
@@ -98,6 +97,6 @@ public class BugFixContributionMiner extends AbstractMiner {
         }  
 		
 		System.out.println(logs.size()+" founded logs!");
-		System.out.println("\nBug Fix Contribution Miner execut end...");
+		System.out.println("Bug Fix Contribution Miner execut end!");
 	}
 }

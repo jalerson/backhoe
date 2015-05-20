@@ -1,5 +1,6 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -12,7 +13,7 @@ import javax.persistence.OneToMany;
 import org.hibernate.annotations.Type;
 
 @Entity
-public class ChangedPath extends Model {
+public class ChangedPath implements Model {
 	@Id
 	@GeneratedValue
 	private Long id;
@@ -25,6 +26,20 @@ public class ChangedPath extends Model {
 	private List<ChangedLine> changedLines;
 	@Type(type="text")
 	private String content;
+	
+	public ChangedPath(){
+		this.changedLines = new LinkedList<ChangedLine>();
+	}
+	
+	public ChangedPath(String path, Character changeType, Commit commit,
+			String content) {
+		super();
+		this.path = path;
+		this.changeType = changeType;
+		this.commit = commit;
+		this.content = content;
+		this.changedLines = new LinkedList<ChangedLine>();
+	}
 	
 	public String getContent() {
 		return content;

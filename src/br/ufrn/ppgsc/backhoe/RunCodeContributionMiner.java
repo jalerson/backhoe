@@ -53,6 +53,8 @@ public class RunCodeContributionMiner {
 		configurations.add(new ConfigurationMining(MinerType.CODE_CONTRIBUTION_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
 		configurations.add(new ConfigurationMining(MinerType.CODECOMPLEXITY_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
 		configurations.add(new ConfigurationMining(MinerType.BUGFIX_CONTRIBUTION_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.BUGGY_COMMIT_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.FAILED_TESTS_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
 		
 		for (ConfigurationMining config : configurations) {
 	

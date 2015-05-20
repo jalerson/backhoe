@@ -13,7 +13,7 @@ import javax.persistence.OneToMany;
 import org.hibernate.annotations.Type;
 
 @Entity
-public class Task extends Model {
+public class Task implements Model {
 	
 	@Id
 	private Long id;
@@ -136,5 +136,4 @@ public class Task extends Model {
 		return "Task [id=" + id + ", title=" + title + ", createdBy="
 				+ createdBy + "]";
 	}
-	
 }

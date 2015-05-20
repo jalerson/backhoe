@@ -1,10 +1,17 @@
 package br.ufrn.ppgsc.backhoe.repository.code;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
@@ -16,6 +23,10 @@ import org.tmatesoft.svn.core.auth.ISVNAuthenticationManager;
 import org.tmatesoft.svn.core.internal.io.dav.DAVRepositoryFactory;
 import org.tmatesoft.svn.core.io.SVNFileRevision;
 import org.tmatesoft.svn.core.io.SVNRepositoryFactory;
+import org.tmatesoft.svn.core.wc.ISVNOptions;
+import org.tmatesoft.svn.core.wc.SVNClientManager;
+import org.tmatesoft.svn.core.wc.SVNDiffClient;
+import org.tmatesoft.svn.core.wc.SVNLogClient;
 import org.tmatesoft.svn.core.wc.SVNRevision;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 import org.tmatesoft.svn.core.wc2.SvnLog;
@@ -33,11 +44,17 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractDeveloperDAO;
 import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
 import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Developer;
+import br.ufrn.ppgsc.backhoe.persistence.model.TaskLog;
+import br.ufrn.ppgsc.backhoe.persistence.model.helper.Blame;
+import br.ufrn.ppgsc.backhoe.persistence.model.helper.BlameHandler;
+import br.ufrn.ppgsc.backhoe.persistence.model.helper.Diff;
+import br.ufrn.ppgsc.backhoe.persistence.model.helper.DiffChild;
 import br.ufrn.ppgsc.backhoe.repository.AbstractRepository;
 
 public class SVNRepository extends AbstractRepository implements CodeRepository {
 	
 	private org.tmatesoft.svn.core.io.SVNRepository repository;
+	private SVNClientManager svnClientManager;
 	private AbstractDeveloperDAO developerDao;
 	private AbstractCommitDAO commitDao;
 	
@@ -71,6 +88,9 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 			repository = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(url));
 			ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(username, password);
 			repository.setAuthenticationManager(authManager);
+			
+			ISVNOptions options = SVNWCUtil.createDefaultOptions(true);
+			svnClientManager = SVNClientManager.newInstance(options, repository.getAuthenticationManager());
 			return true;
 		} catch (SVNException e) {
 			e.printStackTrace();
@@ -237,31 +257,319 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 		System.out.println(revisions.size()+" founded revisions!");
 		return revisions;
 	}
-
-//	@Override
-//	public List<Long> getFileRevisions(String path, Long startRevision, Long endRevision) {
-//		ArrayList<SVNFileRevision> svnFileRevisions = new ArrayList<SVNFileRevision>();
-//		ArrayList<Long> revisions = new ArrayList<Long>();
-//		
-////		System.out.println("Archive: "+path);
-////		boolean revisionsExecuted = false;
-//		// Esse while é usado para executar a busca de revisões novamente caso ela falhe
-////		while(!revisionsExecuted) {
-//			try {
-////				System.out.print("Searching revisions (Rev: "+endRevision+")... ");
-//				// Busca a lista de revisões da classe
-//				repository.getFileRevisions(path, svnFileRevisions, startRevision, endRevision);
-//				for (SVNFileRevision svnFileRevision : svnFileRevisions) {
-//					revisions.add(svnFileRevision.getRevision());
-//				}
-////				System.out.println(revisions.size()+" founded revisions!");
-////				revisionsExecuted = true;
-//			} catch (SVNException svnException) {
-//				svnException.printStackTrace();
-//			}
-////		}
-//		return revisions;
-//	}
 	
+	public List<ChangedPath> getChangedPathsFromLogTarefas(List<TaskLog> logs) {
 		
+		String re1 = "([AUD])"; // Single Character 1
+		String re2 = "(\\s+)"; // White Space 1
+		String re3 = "(trunk)"; // Word 1
+		String re4 = "((?:\\/[\\w\\.\\-]+)+)"; // Unix Path 1
+
+		String re5 = "(\\s)";
+		String re6 = "(\\d+)";
+		String re7 = "(:)";
+		String re8 = "(branches)";
+		String re9 = "(trunk2)";
+
+		// ([AUD])(\s+)(trunk)((?:\/[\w\.\-]+)+)
+		Pattern p1 = Pattern.compile(re1 + re2 + re3 + re4,
+				Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+		// (\\s)(\\d+)(\\s)
+		Pattern p2 = Pattern.compile(re5 + re6 + re5, Pattern.CASE_INSENSITIVE
+				| Pattern.DOTALL);
+		// (:)(\\d+)(\\s)
+		Pattern p3 = Pattern.compile(re7 + re6 + re5);
+		// ([AUD])(\s+)(branches)((?:\/[\w\.\-]+)+)
+		Pattern p4 = Pattern.compile(re1 + re2 + re8 + re4,
+				Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+		// ([AUD])(\s+)(trunk2)((?:\/[\w\.\-]+)+)
+		Pattern p5 = Pattern.compile(re1 + re2 + re9 + re4,
+				Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+		// (\\s)(\\d+)
+		Pattern p6 = Pattern.compile(re5 + re6);
+		// (:)(\\d+)
+		Pattern p7 = Pattern.compile(re7 + re6);
+		
+		Pattern authorPattern = Pattern.compile("(por) ([a-zA-Z0-9]+)");
+		
+		List<ChangedPath> changes = new ArrayList<ChangedPath>();
+		
+		long revision = -1;
+		for (TaskLog log : logs) {
+			String[] logParts = log.getDescription().split("[Rr]evis[ãa]o");
+			// getting the revisions
+
+			for (int i = 1; i < logParts.length; i++) {
+				Matcher revMatcher = authorPattern.matcher(logParts[i]);
+				/*if(!revMatcher.find()) {
+					continue;
+				} else {
+					if(!svnLogins.contains(revMatcher.group(2))) {
+						continue;
+					}
+				}*/
+				if(revMatcher.find()) {
+					Developer developer = new Developer();
+					developer.setCodeRepositoryUsername(revMatcher.group(2));
+					log.setAuthor(developer);
+//					log.setUsuario(revMatcher.group(2));
+				}
+				
+				revMatcher = p2.matcher(logParts[i]);
+
+				// (begin) get the revision
+				if (revMatcher.find()) {
+					revision = Long.valueOf(revMatcher.group(2));
+				} else {
+					revMatcher = p3.matcher(logParts[i]);
+					if (revMatcher.find()) {
+						revision = Long.valueOf(revMatcher.group(2));
+					} else {
+						revMatcher = p6.matcher(logParts[i]);
+						if (revMatcher.find()) {
+							revision = Long.valueOf(revMatcher.group(2));
+						} else {
+							revMatcher = p7.matcher(logParts[i]);
+							if(revMatcher.find()) {
+								revision = Long.valueOf(revMatcher.group(2));
+							}
+						}
+					}
+				}
+				// (end)
+
+				// (begin) get the changed paths/files
+				
+				Commit commit = new Commit();
+				commit.setRevision(revision);
+				commit.setLog(log);
+				
+				List<Matcher> assetMatchers = new LinkedList<Matcher>();
+				assetMatchers.add(p1.matcher(logParts[i]));
+				assetMatchers.add(p4.matcher(logParts[i]));
+				assetMatchers.add(p5.matcher(logParts[i]));
+				
+				for(Matcher assetMatcher: assetMatchers){
+					List<ChangedPath> changedPaths = findJavaChangedPaths(assetMatcher, commit);
+					if(!changedPaths.isEmpty()){
+						changes.addAll(changedPaths);
+						break;
+					}
+				}
+				// (end)
+			}
+		}
+		return changes;
+	}
+	
+	private List<ChangedPath> findJavaChangedPaths(Matcher matcher, Commit commit) {
+		List<ChangedPath> changedPaths = new LinkedList<ChangedPath>();
+		while (matcher.find()) {
+			String c1 = matcher.group(1);
+			String trunk = "/" + matcher.group(3);
+			String path = matcher.group(4);
+			if (path.contains(".java")) {
+				ChangedPath changedPath = new ChangedPath(trunk+path, c1.charAt(0), commit, null);
+				changedPaths.add(changedPath);
+			} else {
+				continue;
+			}
+		}
+		return changedPaths;
+	}
+	
+	public List<Diff> buildDiffs(List<ChangedPath> changedPaths) {
+		ArrayList<Diff> diffs = new ArrayList<Diff>();
+
+		for (ChangedPath changedPath : changedPaths) {
+			SVNRevision fixingRevision = SVNRevision.create(changedPath.getCommit().getRevision());
+			List<SVNFileRevision> fileRevisions = new ArrayList<SVNFileRevision>();
+
+			try {
+				repository.getFileRevisions(changedPath.getPath(), fileRevisions, 1, changedPath.getCommit().getRevision());
+				SVNRevision previousRevision = getPreviousVersion(fileRevisions);
+				SVNRevision startRevision = getStartVersion(fileRevisions);
+				
+				ByteArrayOutputStream diffOut = new ByteArrayOutputStream();
+				SVNURL urlPath = SVNURL.parseURIEncoded(this.url + changedPath.getPath());
+				System.out.println("=================================================================");
+				System.out.println("Executing Diff on path: "+changedPath.getPath()+"\n"
+								 + "Fixing Revision: "+fixingRevision+"\n"
+								 + "Previous Revision: "+previousRevision);
+				SVNDiffClient diffClient = svnClientManager.getDiffClient();
+				System.out.println("=================================================================");
+				diffClient.doDiff(urlPath, fixingRevision, previousRevision, fixingRevision, SVNDepth.INFINITY, true, diffOut);
+				
+				Diff diff = new Diff(changedPath.getCommit().getLog(), fixingRevision.getNumber(), 
+						previousRevision.getNumber(), startRevision.getNumber(), changedPath);
+				
+				diffs.add(diff);
+				buildDiffChilds(diff, diffOut);
+				diffOut.close();
+			} catch (SVNException e) {
+				if(e.getMessage().contains("is not a file in revision")) {
+					System.err.println(changedPath.getPath()+" Not Found. Continuing...");
+				} else {
+					e.printStackTrace();
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return diffs;
+	}
+
+	private SVNRevision getPreviousVersion(List<SVNFileRevision> revisions) {
+		SVNRevision revision;
+		if (revisions.size() > 1) {
+			revision = SVNRevision.create(((SVNFileRevision) revisions
+					.get(revisions.size() - 2)).getRevision());
+		} else {
+			revision = SVNRevision.create(((SVNFileRevision) revisions.get(0))
+					.getRevision());
+		}
+		return revision;
+	}
+
+	private SVNRevision getStartVersion(List<SVNFileRevision> revisions) {
+		SVNRevision revision = SVNRevision.create(((SVNFileRevision) revisions
+				.get(0)).getRevision());
+		return revision;
+	}
+
+	private void buildDiffChilds(Diff diff, ByteArrayOutputStream diffOut) {
+		ByteArrayInputStream diffInputStream = new ByteArrayInputStream(
+				diffOut.toByteArray());
+		BufferedReader br = new BufferedReader(new InputStreamReader(
+				diffInputStream));
+		DiffChild childReference = null;
+		String theLineBefore = null;
+		try {
+			while (br.ready()) {
+				String line = br.readLine();
+				if (!verifyWhiteSpace(line)) {
+					if (isDiffChild(line)) {
+						DiffChild child = new DiffChild();
+						diff.getChildren().add(child);
+						child.setHeader(line);
+						childReference = child;
+					} else if (isAddition(line)) {
+						if (childReference != null) {
+							childReference.getAdditions().add(line);
+							if (theLineBefore != null)
+								childReference.setLineJustBefore(theLineBefore);
+							theLineBefore = null;
+						}
+					} else if (isRemoval(line)) {
+						if (childReference != null) {
+							childReference.getRemovals().add(line);
+							if (theLineBefore != null)
+								childReference.setLineJustBefore(theLineBefore);
+							theLineBefore = null;
+						}
+					} else {
+						theLineBefore = line;
+					}
+				}
+			}
+		} catch (IOException io) {
+			io.printStackTrace();
+		}
+	}
+
+	private boolean isDiffChild(String line) {
+		Pattern pattern = Pattern
+				.compile("@@\\s-\\d+,\\d+\\s\\+\\d+,\\d+\\s@@");
+		Matcher matcher = pattern.matcher(line);
+		return matcher.find();
+	}
+
+	private boolean isAddition(String line) {
+		Pattern pattern = Pattern.compile("^(\\+\\s.+)");
+		Matcher matcher = pattern.matcher(line);
+
+		boolean result = matcher.find();
+
+		if (!result) {
+			pattern = Pattern.compile("^(\\+)");
+			matcher = pattern.matcher(line);
+			result = matcher.find();
+		}
+
+		return result;
+	}
+
+	private boolean isRemoval(String line) {
+		Pattern pattern = Pattern.compile("-\\s.+");
+		Matcher matcher = pattern.matcher(line);
+
+		return matcher.find();
+	}
+
+	public List<Blame> buildBlames(List<Diff> diffs) {
+		
+		SVNLogClient logClient = svnClientManager.getLogClient();
+
+		for (Diff diff : diffs) {
+			SVNRevision svnFixingRevision = SVNRevision.create(diff
+					.getFixingRevision());
+			SVNRevision svnStartRevision = SVNRevision.create(diff
+					.getStartRevision());
+			SVNRevision svnPreviousRevision = SVNRevision.create(diff
+					.getPreviousRevision());
+
+			ChangedPath changedPath = diff.getChangedPath();
+
+			try {
+				BlameHandler blameHandler = new BlameHandler();
+				blameHandler.setChangedPath(changedPath);
+
+				SVNURL url = SVNURL.parseURIEncoded(this.url
+						+ changedPath.getPath());
+				logClient.doAnnotate(url, svnFixingRevision, svnStartRevision,
+						svnPreviousRevision, blameHandler);
+
+				List<Blame> blames = (List<Blame>) blameHandler.getBlameList();
+				return analyzeBlames(blames, diff);
+			} catch (SVNException e) {
+				e.printStackTrace();
+			}
+		}
+		return new ArrayList<Blame>();
+	}
+	
+	private List<Blame> analyzeBlames(List<Blame> blames, Diff diff) {
+		
+		List<Blame> blamesAnalized = new LinkedList<Blame>();
+		
+		for (DiffChild diffChild : diff.getChildren()) {
+			boolean onlyAdditions = diffChild.getRemovals().isEmpty();
+
+			if (onlyAdditions) {
+				for (Blame blame : blames) {
+					if (blame.getLine().equals(diffChild.getLineJustBefore())) {
+						blame.setLog(diff.getLog());
+						diffChild.getBlames().add(blame);
+						blamesAnalized.add(blame);
+					}
+				}
+			} else {
+				for (Blame blame : blames) {
+					for (String removal : diffChild.getRemovals()) {
+						if (blame.getLine().equals(
+								removal.replaceFirst("-", ""))) {
+							blame.setLog(diff.getLog());
+							diffChild.getBlames().add(blame);
+							blamesAnalized.add(blame);
+						}
+					}
+				}
+			}
+		}
+		return blamesAnalized;
+	}
+
+	private boolean verifyWhiteSpace(String line) {
+		return line.replaceAll("\\+", "").replaceAll("-", "").trim().length() == 0;
+	}
 }

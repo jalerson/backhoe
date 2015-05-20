@@ -18,6 +18,7 @@ public abstract class AbstractMiner implements Miner{
 	
 	protected Date startDate;
 	protected Date endDate;
+	protected Integer system;
 	protected List<String> developers;
 	protected CodeRepository codeRepository;
 	protected TaskRepository taskRepository;
@@ -27,13 +28,14 @@ public abstract class AbstractMiner implements Miner{
 	protected AbstractMetricTypeDAO metricTypeDao;
 	protected List<String> ignoredPaths;
 	
-	public AbstractMiner(CodeRepository codeRepository, TaskRepository taskRepository, Date startDate, Date endDate, List<String> developers, List<String> ignoredPaths) {
+	public AbstractMiner(Integer system, CodeRepository codeRepository, TaskRepository taskRepository, Date startDate, Date endDate, List<String> developers, List<String> ignoredPaths) {
 		this.startDate = startDate;
 		this.endDate = endDate;
 		this.developers = developers;
 		this.codeRepository = codeRepository;
 		this.taskRepository = taskRepository;
 		this.ignoredPaths = ignoredPaths;
+		this.system = system;
 	}
 	
 	public boolean setup() throws MissingParameterException {	

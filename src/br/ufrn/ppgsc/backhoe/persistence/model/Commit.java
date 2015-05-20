@@ -1,6 +1,7 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -12,7 +13,7 @@ import javax.persistence.OneToMany;
 
 
 @Entity
-public class Commit extends Model {
+public class Commit implements Model {
 	
 	@Id
 	private Long revision;
@@ -27,6 +28,27 @@ public class Commit extends Model {
 	
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "commit", cascade=CascadeType.ALL)
 	private List<ChangedPath> changedPaths;
+	
+	public Commit(){
+		this.changedPaths = new LinkedList<ChangedPath>();
+	}
+	
+	public Commit(Long revision, String comment, Date createdAt, String branch,
+			Developer author, TaskLog log) {
+		this(revision, comment, createdAt, branch, author, log, new LinkedList<ChangedPath>());
+	}
+
+	public Commit(Long revision, String comment, Date createdAt, String branch,
+			Developer author, TaskLog log, List<ChangedPath> changedPaths) {
+		super();
+		this.revision = revision;
+		this.comment = comment;
+		this.createdAt = createdAt;
+		this.branch = branch;
+		this.author = author;
+		this.log = log;
+		this.changedPaths = changedPaths;
+	}
 	
 	public List<ChangedPath> getChangedPaths() {
 		return changedPaths;
@@ -75,5 +97,15 @@ public class Commit extends Model {
 	public String toString() {
 		return "Commit [revision=" + revision + ", author=" + author + ", log="
 				+ log + "]";
+	}
+
+	@Override
+	public Long getId() {
+		return this.revision;
+	}
+
+	@Override
+	public void setId(Long id) {
+		this.revision = id;
 	}
 }

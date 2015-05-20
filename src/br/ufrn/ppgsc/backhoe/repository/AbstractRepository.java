@@ -41,4 +41,15 @@ public abstract class AbstractRepository implements Repository {
 	public void setURL(String url) {
 		this.url = url;
 	}
+	
+	protected String preparePlaceholders(long[] values) {
+		String sql = "(";
+		for (int i = 0; i < values.length; i++){
+			sql += values[i];
+			if (i != (values.length - 1))
+				sql += ", ";
+		}
+		sql += ")";
+		return sql;
+	}
 }

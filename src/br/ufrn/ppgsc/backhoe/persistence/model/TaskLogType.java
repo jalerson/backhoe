@@ -8,7 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 @Entity
-public class TaskLogType extends Model {
+public class TaskLogType implements Model {
 	
 	@Id
 	private Long id;
