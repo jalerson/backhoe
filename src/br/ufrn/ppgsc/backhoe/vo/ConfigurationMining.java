@@ -2,7 +2,6 @@ package br.ufrn.ppgsc.backhoe.vo;
 
 import java.sql.Date;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import br.ufrn.ppgsc.backhoe.formatter.BugFixContributionFormatter;
 import br.ufrn.ppgsc.backhoe.formatter.BuggyCommitFormatter;
@@ -48,7 +47,7 @@ public class ConfigurationMining {
 
 	public ArrayList<String> getTeam() {
 		switch(system) {
-		
+			// complete with team mermbers login
 			default: System.err.println("Set the variable system with one of the listed values (2, 3, 4, 29)");
 					 return null;
 		}
