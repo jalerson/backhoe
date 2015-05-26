@@ -22,6 +22,8 @@ public class CodeComplexityMiner extends AbstractMiner {
 	private MetricType addedComplexityPerChangedPathMetricType;
 	private MetricType changedComplexityPerChangedPathMetricType;
 	
+	private List<Commit> specificCommitsToMining = null;
+	
 	public CodeComplexityMiner(Integer system, CodeRepository codeRepository,
 			TaskRepository taskRepository, Date startDate, Date endDate,
 			List<String> developers, List<String> ignoredPaths) {
@@ -54,14 +56,16 @@ public class CodeComplexityMiner extends AbstractMiner {
 	public void execute() {
 
 		List<Commit> commits = null;
-		if (developers == null) {
-			commits = codeRepository.findCommitsByTimeRange(startDate, endDate,
-					true, ignoredPaths);
-		} else {
-			commits = codeRepository.findCommitsByTimeRangeAndDevelopers(startDate,
-					endDate, developers, true, ignoredPaths);
+	
+		if(specificCommitsToMining != null){
+			commits = specificCommitsToMining;
+		}else{
+			if(developers == null) {
+				commits = codeRepository.findCommitsByTimeRange(startDate, endDate, true, ignoredPaths);
+			} else {
+				commits = codeRepository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, ignoredPaths);
+			}
 		}
-		
 		calculateCodeComplexity(commits);
 		
 //		taskRepository.connect();
@@ -75,7 +79,6 @@ public class CodeComplexityMiner extends AbstractMiner {
 		int processedCommits = 0;
 
 		for (Commit commit : commits) {
-			
 			List<ChangedPath> changedPaths = changedPathDao.getChangedPathByCommitRevision(commit.getRevision());
 			for (ChangedPath changedPath : changedPaths) {
 				if (changedPath.getChangeType().equals('D')) {
@@ -223,5 +226,13 @@ public class CodeComplexityMiner extends AbstractMiner {
 			if (currentMethod.getName().equals(previousMethod.getName()))
 				return previousMethod;
 		return null;
+	}
+
+	public List<Commit> getSpecificCommitsToMining() {
+		return specificCommitsToMining;
+	}
+
+	public void setSpecificCommitsToMining(List<Commit> specificCommitsToMining) {
+		this.specificCommitsToMining = specificCommitsToMining;
 	}
 }

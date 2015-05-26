@@ -24,8 +24,8 @@ public class Commit implements Model {
 	@ManyToOne
 	private Developer author;
 	@ManyToOne
-	private TaskLog log;
-	
+	private Task task;
+
 	@OneToMany(fetch = FetchType.EAGER, mappedBy = "commit", cascade=CascadeType.ALL)
 	private List<ChangedPath> changedPaths;
 	
@@ -34,19 +34,19 @@ public class Commit implements Model {
 	}
 	
 	public Commit(Long revision, String comment, Date createdAt, String branch,
-			Developer author, TaskLog log) {
-		this(revision, comment, createdAt, branch, author, log, new LinkedList<ChangedPath>());
+			Developer author, Task task) {
+		this(revision, comment, createdAt, branch, author, task, new LinkedList<ChangedPath>());
 	}
 
 	public Commit(Long revision, String comment, Date createdAt, String branch,
-			Developer author, TaskLog log, List<ChangedPath> changedPaths) {
+			Developer author, Task task, List<ChangedPath> changedPaths) {
 		super();
 		this.revision = revision;
 		this.comment = comment;
 		this.createdAt = createdAt;
 		this.branch = branch;
 		this.author = author;
-		this.log = log;
+		this.task = task;
 		this.changedPaths = changedPaths;
 	}
 	
@@ -87,18 +87,17 @@ public class Commit implements Model {
 	public void setAuthor(Developer author) {
 		this.author = author;
 	}
-	public TaskLog getLog() {
-		return log;
+	public Task getTask() {
+		return task;
 	}
-	public void setLog(TaskLog log) {
-		this.log = log;
+	public void setTask(Task task) {
+		this.task = task;
 	}
 	@Override
 	public String toString() {
-		return "Commit [revision=" + revision + ", author=" + author + ", log="
-				+ log + "]";
+		return "Commit [revision=" + revision + ", author=" + author
+				+ ", task=" + task + "]";
 	}
-
 	@Override
 	public Long getId() {
 		return this.revision;

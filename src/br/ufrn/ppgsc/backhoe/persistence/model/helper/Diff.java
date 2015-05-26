@@ -4,11 +4,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
-import br.ufrn.ppgsc.backhoe.persistence.model.TaskLog;
+import br.ufrn.ppgsc.backhoe.persistence.model.Task;
 
 public class Diff {
 	
-	private TaskLog log;
+//	private TaskLog log;
+	private Task task;
 	private long fixingRevision;
 	private long previousRevision;
 	private long startRevision;
@@ -19,28 +20,28 @@ public class Diff {
 		this.children = new LinkedList<DiffChild>();
 	}
 	
-	public Diff(TaskLog log, long fixingRevision, long previousRevision,
+	public Diff(Task task, long fixingRevision, long previousRevision,
 			long startRevision, ChangedPath changedPath) {
-		this(log, fixingRevision, previousRevision, startRevision, changedPath, new LinkedList<DiffChild>());
+		this(task, fixingRevision, previousRevision, startRevision, changedPath, new LinkedList<DiffChild>());
 	}
-
-	public Diff(TaskLog log, long fixingRevision, long previousRevision,
+	
+	public Diff(Task task, long fixingRevision, long previousRevision,
 			long startRevision, ChangedPath changedPath,
 			List<DiffChild> children) {
 		super();
-		this.log = log;
+		this.task = task;
 		this.fixingRevision = fixingRevision;
 		this.previousRevision = previousRevision;
 		this.startRevision = startRevision;
 		this.changedPath = changedPath;
 		this.children = children;
 	}
-	
-	public TaskLog getLog() {
-		return log;
+
+	public Task getTask() {
+		return task;
 	}
-	public void setLog(TaskLog log) {
-		this.log = log;
+	public void setTask(Task task) {
+		this.task = task;
 	}
 	public long getFixingRevision() {
 		return fixingRevision;

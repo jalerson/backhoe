@@ -1,13 +1,10 @@
 package br.ufrn.ppgsc.backhoe.persistence.model;
 
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 
 import org.hibernate.annotations.Type;
 
@@ -25,20 +22,18 @@ public class TaskLog implements Model {
 	private Task task;
 	@ManyToOne
 	private TaskLogType type;
-	@OneToMany(mappedBy = "log")
-	private List<Commit> commits;
+	private String revisions;
 	
 	public TaskLog(){
-		this.commits = new LinkedList<Commit>();
 	}
 	
 	public TaskLog(Long id, String description, Date createdAt,
 			Developer author, Task task, TaskLogType type) {
-		this(id, description, createdAt, author, task, type, new LinkedList<Commit>());
+		this(id, description, createdAt, author, task, type, null);
 	}
 
 	public TaskLog(Long id, String description, Date createdAt,
-			Developer author, Task task, TaskLogType type, List<Commit> commits) {
+			Developer author, Task task, TaskLogType type, String revisions) {
 		super();
 		this.id = id;
 		this.description = description;
@@ -46,15 +41,9 @@ public class TaskLog implements Model {
 		this.author = author;
 		this.task = task;
 		this.type = type;
-		this.commits = commits;
+		this.revisions = revisions;
 	}
 
-	public List<Commit> getCommits() {
-		return commits;
-	}
-	public void setCommits(List<Commit> commits) {
-		this.commits = commits;
-	}
 	public Long getId() {
 		return id;
 	}
@@ -91,6 +80,13 @@ public class TaskLog implements Model {
 	public void setType(TaskLogType type) {
 		this.type = type;
 	}
+	public String getRevisions() {
+		return revisions;
+	}
+	public void setRevisions(String revisions) {
+		this.revisions = revisions;
+	}
+
 	@Override
 	public String toString() {
 		return "TaskLog [id=" + id + ", createdAt=" + createdAt + ", author="

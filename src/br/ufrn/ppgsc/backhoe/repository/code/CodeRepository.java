@@ -19,5 +19,7 @@ public interface CodeRepository extends Repository {
 	List<ChangedPath> getChangedPathsFromLogTarefas(List<TaskLog> logs);
 	List<Diff> buildDiffs(List<ChangedPath> changedPaths);
 	List<Blame> buildBlames(List<Diff> diffs);
+	List<Commit> findCommitsFromLog(TaskLog log, boolean collectChangedPaths, List<String> ignoredPaths);
+	List<Commit> findCommitsFromLogs(List<TaskLog> logs, boolean collectChangedPaths, List<String> ignoredPaths);
 	
 }

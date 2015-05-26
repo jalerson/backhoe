@@ -28,6 +28,8 @@ public class CodeContributionMiner extends AbstractMiner {
 	private MetricType addedMethodsMetricType;
 	private MetricType changedMethodsMetricType;
 	
+	private List<Commit> specificCommitsToMining;
+	
 	public CodeContributionMiner(Integer system, CodeRepository codeRepository,
 			TaskRepository taskRepository, Date startDate, Date endDate,
 			List<String> developers, List<String> ignoredPaths) {
@@ -75,16 +77,28 @@ public class CodeContributionMiner extends AbstractMiner {
 	public void execute() {
 		
 		List<Commit> commits = null;
-		if(developers == null) {
-			commits = codeRepository.findCommitsByTimeRange(startDate, endDate, true, ignoredPaths);
-		} else {
-			commits = codeRepository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, ignoredPaths);
+		
+		if(specificCommitsToMining != null){
+			commits = specificCommitsToMining;
+		}else{
+			if(developers == null) {
+				commits = codeRepository.findCommitsByTimeRange(startDate, endDate, true, ignoredPaths);
+			} else {
+				commits = codeRepository.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, ignoredPaths);
+			}
 		}
 		
 		System.out.println("\nCalculating code contribution metrics...");
 		
-		int processedCommits = 0;
+		calculateCodeContributionMetricsToCommits(commits);
 		
+		System.out.println("Code Contribution Miner execut end!\n");
+	}
+	
+	private void calculateCodeContributionMetricsToCommits(List<Commit> commits){
+
+		int processedCommits = 0;
+
 		for (Commit commit : commits) {
 
 			List<ChangedPath> changedPaths = changedPathDao.getChangedPathByCommitRevision(commit.getRevision());
@@ -146,10 +160,6 @@ public class CodeContributionMiner extends AbstractMiner {
 			}
 			System.out.println("[" + ++processedCommits + "] of [" + commits.size() + "] processed commits.");
 		}
-		System.out.println("Code Contribution Miner execut end!\n");
-		
-//		taskRepository.connect();
-//		((IProjectRepository) taskRepository).associateTaskToCommitFromIProject(commits, developers);
 	}
 	
 	private void calculateMethodMetrics(ChangedPath changedPath, String previousContent, String currentContent) {
@@ -266,5 +276,13 @@ public class CodeContributionMiner extends AbstractMiner {
 		deletedLocMetric.setType(deletedLOCMetricType);
 		deletedLocMetric.setMinerSlug(this.minerSlug);
 		metricDao.save(deletedLocMetric);
+	}
+
+	public List<Commit> getSpecificCommitsToMining() {
+		return specificCommitsToMining;
+	}
+
+	public void setSpecificCommitsToMining(List<Commit> specificCommitsToMining) {
+		this.specificCommitsToMining = specificCommitsToMining;
 	}
 }

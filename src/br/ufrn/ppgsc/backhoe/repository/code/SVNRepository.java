@@ -8,8 +8,12 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -133,7 +137,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 						if(commit == null){
 							commit = createCommit(svnLogEntry, collectChangedPaths, ignoredPaths);
 							commitDao.save(commit);
-						}else if(commit != null && commit.getChangedPaths() == null && commit.getChangedPaths().isEmpty() && collectChangedPaths){
+						}else if(commit != null && commit.getChangedPaths() != null && commit.getChangedPaths().isEmpty() && collectChangedPaths){
 							commit.setChangedPaths(findChangedPathsBySVNLogEntry(svnLogEntry, commit, ignoredPaths));
 							commitDao.update(commit);
 						}
@@ -193,6 +197,54 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 		return commit;
 	}
 	
+	public List<Commit> findCommitsFromLogs(List<TaskLog> logs, boolean collectChangedPaths, List<String> ignoredPaths){
+		Map<Long, Commit> commitsMAP = new HashMap<Long, Commit>();
+		for(TaskLog log: logs){
+			List<Commit> commits = this.findCommitsFromLog(log, collectChangedPaths, ignoredPaths);
+			for(Commit commit: commits){
+				if(!commitsMAP.containsKey(commit.getRevision()))
+					commitsMAP.put(commit.getRevision(), commit);
+			}
+		}
+		return new ArrayList<Commit>(commitsMAP.values());
+	}
+	
+	public List<Commit> findCommitsFromLog(TaskLog log, boolean collectChangedPaths, List<String> ignoredPaths){
+		Set<Long> revisions = new HashSet<Long>();
+		if(log.getRevisions() != null && !log.getRevisions().isEmpty()){
+			String[] revisionsIDs = log.getRevisions().replaceAll(" ", "").split(",");
+			for(int i = 0; i < revisionsIDs.length; i++){
+				try{
+					revisions.add(Long.parseLong(revisionsIDs[i]));
+				}catch(NumberFormatException e){
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		Pattern pattern = Pattern.compile("(Revisão|revisão|Revisao|revisao|#)"
+				+ "(:| |) "
+				+ "(\\d+)");
+		
+		if(log.getDescription() != null && !log.getDescription().isEmpty()){
+			Matcher matcher = pattern.matcher(log.getDescription());
+			if (matcher.find()){
+				revisions.add(Long.parseLong(matcher.group(3)));
+			}
+		}
+
+		List<Commit> commits = new ArrayList<Commit>();
+		for(Long revision: revisions){
+			Commit commit = findCommitByRevision(revision, collectChangedPaths, ignoredPaths);
+			if(commit != null){
+				commit.setTask(log.getTask());
+				commitDao.update(commit);
+				commits.add(commit);
+			}
+		}
+		return commits;
+	}
+	
 	public Commit findCommitByRevision(Long revision,  boolean collectChangedPaths, List<String> ignoredPaths){
 		Commit commit = null;
 		try {
@@ -213,18 +265,15 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 				commit = commitDao.findByRevision(svnLogEntry.getRevision());
 				if(commit == null) {
 					commit = createCommit(svnLogEntry, collectChangedPaths, ignoredPaths);
+				}else if(commit != null && commit.getChangedPaths() != null && commit.getChangedPaths().isEmpty() && collectChangedPaths){
+					commit.setChangedPaths(findChangedPathsBySVNLogEntry(svnLogEntry, commit, ignoredPaths));
+					commitDao.update(commit);
 				}
-				List<ChangedPath> changedPaths = new ArrayList<ChangedPath>();
-				Collection<SVNLogEntryPath> svnLogEntryPaths = svnLogEntry.getChangedPaths().values();
-				for (SVNLogEntryPath svnLogEntryPath : svnLogEntryPaths) {
-					ChangedPath changedPath = createChangedPath(svnLogEntryPath, commit, ignoredPaths);
-					changedPaths.add(changedPath);
-				}
-				commit.setChangedPaths(changedPaths);
 			}
 		} catch (SVNException e) {
 			e.printStackTrace();
 		}
+		commitDao.save(commit);
 		return commit;
 	}
 
@@ -342,7 +391,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 				
 				Commit commit = new Commit();
 				commit.setRevision(revision);
-				commit.setLog(log);
+				commit.setTask(log.getTask());
 				
 				List<Matcher> assetMatchers = new LinkedList<Matcher>();
 				assetMatchers.add(p1.matcher(logParts[i]));
@@ -400,7 +449,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 				System.out.println("=================================================================");
 				diffClient.doDiff(urlPath, fixingRevision, previousRevision, fixingRevision, SVNDepth.INFINITY, true, diffOut);
 				
-				Diff diff = new Diff(changedPath.getCommit().getLog(), fixingRevision.getNumber(), 
+				Diff diff = new Diff(changedPath.getCommit().getTask(), fixingRevision.getNumber(), 
 						previousRevision.getNumber(), startRevision.getNumber(), changedPath);
 				
 				diffs.add(diff);
@@ -548,7 +597,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 			if (onlyAdditions) {
 				for (Blame blame : blames) {
 					if (blame.getLine().equals(diffChild.getLineJustBefore())) {
-						blame.setLog(diff.getLog());
+						blame.setTask(diff.getTask());
 						diffChild.getBlames().add(blame);
 						blamesAnalized.add(blame);
 					}
@@ -558,7 +607,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 					for (String removal : diffChild.getRemovals()) {
 						if (blame.getLine().equals(
 								removal.replaceFirst("-", ""))) {
-							blame.setLog(diff.getLog());
+							blame.setTask(diff.getTask());
 							diffChild.getBlames().add(blame);
 							blamesAnalized.add(blame);
 						}

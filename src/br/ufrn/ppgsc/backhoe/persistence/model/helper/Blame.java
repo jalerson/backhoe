@@ -3,11 +3,12 @@ package br.ufrn.ppgsc.backhoe.persistence.model.helper;
 import java.util.Date;
 
 import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
-import br.ufrn.ppgsc.backhoe.persistence.model.TaskLog;
+import br.ufrn.ppgsc.backhoe.persistence.model.Task;
 
 public class Blame {
 
-	private TaskLog log;
+//	private TaskLog log;
+	private Task task;
 	private long initialRevision;
 	private long lastRevision;
 	private String author;
@@ -19,11 +20,11 @@ public class Blame {
 	
 	public Blame(){}
 	
-	public Blame(TaskLog log, long initialRevision, long lastRevision,
+	public Blame(Task task, long initialRevision, long lastRevision,
 			String author, Date date, String line, long revision,
 			ChangedPath changedPath, long lineNumber) {
 		super();
-		this.log = log;
+		this.task = task;
 		this.initialRevision = initialRevision;
 		this.lastRevision = lastRevision;
 		this.author = author;
@@ -34,12 +35,14 @@ public class Blame {
 		this.lineNumber = lineNumber;
 	}
 
-	public TaskLog getLog() {
-		return log;
+	public Task getTask() {
+		return task;
 	}
-	public void setLog(TaskLog log) {
-		this.log = log;
+
+	public void setTask(Task task) {
+		this.task = task;
 	}
+
 	public long getInitialRevision() {
 		return initialRevision;
 	}

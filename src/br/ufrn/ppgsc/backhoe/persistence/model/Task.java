@@ -36,6 +36,8 @@ public class Task implements Model {
 	private Developer createdBy;
 	@OneToMany(mappedBy = "task")
 	private List<TaskLog> taskLogs;
+	@OneToMany(mappedBy = "task")
+	private List<Commit> commits;
 	
 	public Task(){
 		this(null, null);
@@ -46,18 +48,20 @@ public class Task implements Model {
 		this.id = id;
 		this.title = title;
 		this.taskLogs = new LinkedList<TaskLog>();
+		this.commits = new LinkedList<Commit>();
 	}
 	
 	public Task(Long id, String title, Date createdAt, String description,
 			TaskType type, TaskPriority priority, TaskStatus status,
 			Project project, Developer createdBy){
 		this(id, title, createdAt, description, type, priority, 
-			 status, project, createdBy, new LinkedList<TaskLog>());
+			 status, project, createdBy, new LinkedList<TaskLog>(), new LinkedList<Commit>());
 	}
-
+	
 	public Task(Long id, String title, Date createdAt, String description,
 			TaskType type, TaskPriority priority, TaskStatus status,
-			Project project, Developer createdBy, List<TaskLog> taskLogs) {
+			Project project, Developer createdBy, List<TaskLog> taskLogs,
+			List<Commit> commits) {
 		super();
 		this.id = id;
 		this.title = title;
@@ -69,8 +73,9 @@ public class Task implements Model {
 		this.project = project;
 		this.createdBy = createdBy;
 		this.taskLogs = taskLogs;
+		this.commits = commits;
 	}
-	
+
 	public Developer getCreatedBy() {
 		return createdBy;
 	}

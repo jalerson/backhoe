@@ -43,8 +43,8 @@ public class RunCodeContributionMiner {
 		localRepository.setURL(localRepositoryProperties.getProperty("url"));
 		
 		Date startDate = Date.valueOf("2015-02-09");
-//		Date endDate = Date.valueOf("2015-02-10");
 		Date endDate = Date.valueOf("2015-05-15");
+//		Date endDate = Date.valueOf("2015-05-15");
 
 		ArrayList<String> ignoredPaths = new ArrayList<String>(Arrays.asList(new String[]{ "/trunk/LPS", "/ExemploIntegracaoSIAFI", "/branches" }));
 	
@@ -55,6 +55,7 @@ public class RunCodeContributionMiner {
 		configurations.add(new ConfigurationMining(MinerType.BUGFIX_CONTRIBUTION_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
 		configurations.add(new ConfigurationMining(MinerType.BUGGY_COMMIT_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
 		configurations.add(new ConfigurationMining(MinerType.FAILED_TESTS_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.TASK_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
 		
 		for (ConfigurationMining config : configurations) {
 	

@@ -12,6 +12,8 @@ public class HibernateChangedPathDAO extends HibernateGenericDAO<ChangedPath, Lo
 	public List<ChangedPath> getChangedPathByCommitRevision(Long revision){
 		String sql = "from ChangedPath " +
 					 "where commit_id = :revision";
+		getSession().clear();
+		getSession().flush();
 		Query query = getSession().createQuery(sql);
 		query.setParameter("revision", revision);
 		@SuppressWarnings("unchecked")

@@ -47,7 +47,8 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
     	try{
 	    	getSession().beginTransaction();
 	        getSession().persist(obj);
-	        getSession().flush();
+	        getSession().clear();
+			getSession().flush();
 	        getSession().getTransaction().commit();
     	}catch (Exception e) {
     		e.printStackTrace();
@@ -61,7 +62,8 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
     	try{
 	    	getSession().beginTransaction();
 	        getSession().saveOrUpdate(obj);
-	        getSession().flush();
+	        getSession().clear();
+			getSession().flush();
 	        getSession().getTransaction().commit();
     	}catch (Exception e) {
     		e.printStackTrace();
@@ -75,8 +77,8 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
     	try{
     		getSession().beginTransaction();
         	getSession().merge(obj);
-        	getSession().flush();
         	getSession().clear();
+    		getSession().flush();
         	getSession().getTransaction().commit();
     	}catch (Exception e) {
     		e.printStackTrace();
