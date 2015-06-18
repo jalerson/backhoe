@@ -18,7 +18,16 @@ public interface TaskRepository extends Repository{
 	List<TaskLog> findBugFixTaskLogs(List<Task> tasks, List<String> developers);
 	List<TaskLog> findBuggedTaskLogs(List<Task> tasks, List<String> developers);
 	
+	List<TaskLog> findBugFixTaskLogs(Date startDate, Date endDate, long[] systems, List<String> developers);
+	
 	List<Task> filterBugFixTasks(List<Task> tasks);
+	
+	List<TaskLog> findTaskLogs(long[] logTypeIDs,
+			  List<String> developers,
+			  Date startDate, Date endDate,
+			  long[] taskTypeIDs,
+			  long[] taskStatusIDs,
+			  long[] systems);
 	
 	List<Task> findTasks(Date startDate, Date endDate,
 			 long[] taskTypeIDs,

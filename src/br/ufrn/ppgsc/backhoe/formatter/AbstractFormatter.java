@@ -44,7 +44,7 @@ public abstract class AbstractFormatter implements Formatter {
 		return str.substring(0, str.length()-2)+")";
 	}
 	
-	protected void createCSV(String content, String fileName){
+	protected File createCSV(String content, String fileName){
 		File csvFile = new File(fileName);
 		try {
 			csvFile.createNewFile();
@@ -54,7 +54,9 @@ public abstract class AbstractFormatter implements Formatter {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return null;
 		}
+		return csvFile;
 	}
 	
 	public String getDirPath(){

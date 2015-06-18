@@ -44,10 +44,10 @@ public class FailedTestsMiner extends AbstractMiner {
 	@Override
 	public boolean setupMinerSpecific() throws MissingParameterException {
 		this.failedTestsPerDeveloperByPeriod = metricTypeDao
-				.findBySlug("commit:buggy");
+				.findBySlug("tests:failed");
 		if (this.failedTestsPerDeveloperByPeriod == null) {
 			this.failedTestsPerDeveloperByPeriod = new MetricType(
-					"Bugs Fixed", "commit:buggy");
+					"Failed Tests", "tests:failed");
 			metricTypeDao.save(this.failedTestsPerDeveloperByPeriod);
 		}
 		return taskRepository.connect() && codeRepository.connect();

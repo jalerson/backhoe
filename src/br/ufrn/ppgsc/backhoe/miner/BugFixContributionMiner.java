@@ -13,7 +13,6 @@ import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractDeveloperDAO;
 import br.ufrn.ppgsc.backhoe.persistence.model.Developer;
 import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
 import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
-import br.ufrn.ppgsc.backhoe.persistence.model.Task;
 import br.ufrn.ppgsc.backhoe.persistence.model.TaskLog;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
@@ -59,8 +58,11 @@ public class BugFixContributionMiner extends AbstractMiner {
 		System.out.print("Researching logs in iproject... \n");
 		
 		long[] systems = {system};
-		List<Task> tasks = taskRepository.findBugFixTasks(startDate, endDate, systems);
-		List<TaskLog> logs = taskRepository.findBugFixTaskLogs(tasks, developers);
+//		List<Task> tasks = taskRepository.findBugFixTasks(startDate, endDate, systems);
+//		List<TaskLog> logs = taskRepository.findBugFixTaskLogs(tasks, developers);
+		
+		List<TaskLog> logs = taskRepository.findBugFixTaskLogs(startDate, endDate, systems, developers);
+		
 		Hashtable<String, Integer> bugFixContributions = new Hashtable<String, Integer>();
 		
 		for (String login : developers) {

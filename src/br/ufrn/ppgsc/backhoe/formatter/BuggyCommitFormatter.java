@@ -1,5 +1,6 @@
 package br.ufrn.ppgsc.backhoe.formatter;
 
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
@@ -19,11 +20,11 @@ public class BuggyCommitFormatter extends AbstractFormatter {
 	}
 
 	@Override
-	public void format() {
+	public File format() {
 		String contentFile = generateContentFileCSV(startDate, endDate, developers);
 		String fileName = systemName+"_"+getHumanizedStartDate()+"_"+getHumanizedEndDate()+"_BuggyCommit.csv";
 		String filePathAndName = getDirPath()+ "/" + fileName;
-		createCSV(contentFile, filePathAndName);
+		return createCSV(contentFile, filePathAndName);
 	}
 	
 	public String generateContentFileCSV(Date startDateInterval, Date endDateInterval, List<String> developers){

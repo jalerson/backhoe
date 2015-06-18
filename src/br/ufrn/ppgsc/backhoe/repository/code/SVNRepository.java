@@ -199,13 +199,14 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 	
 	public List<Commit> findCommitsFromLogs(List<TaskLog> logs, boolean collectChangedPaths, List<String> ignoredPaths){
 		Map<Long, Commit> commitsMAP = new HashMap<Long, Commit>();
-		for(TaskLog log: logs){
-			List<Commit> commits = this.findCommitsFromLog(log, collectChangedPaths, ignoredPaths);
-			for(Commit commit: commits){
-				if(!commitsMAP.containsKey(commit.getRevision()))
-					commitsMAP.put(commit.getRevision(), commit);
+		if(!logs.isEmpty())
+			for(TaskLog log: logs){
+				List<Commit> commits = this.findCommitsFromLog(log, collectChangedPaths, ignoredPaths);
+				for(Commit commit: commits){
+					if(!commitsMAP.containsKey(commit.getRevision()))
+						commitsMAP.put(commit.getRevision(), commit);
+				}
 			}
-		}
 		return new ArrayList<Commit>(commitsMAP.values());
 	}
 	
@@ -235,7 +236,9 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 
 		List<Commit> commits = new ArrayList<Commit>();
 		for(Long revision: revisions){
-			Commit commit = findCommitByRevision(revision, collectChangedPaths, ignoredPaths);
+			Commit commit = commitDao.findByRevision(revision); // find in local bd
+			if(commit == null)
+				commit = findCommitByRevision(revision, collectChangedPaths, ignoredPaths); // find in svn repository
 			if(commit != null){
 				commit.setTask(log.getTask());
 				commitDao.update(commit);
@@ -265,6 +268,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 				commit = commitDao.findByRevision(svnLogEntry.getRevision());
 				if(commit == null) {
 					commit = createCommit(svnLogEntry, collectChangedPaths, ignoredPaths);
+					commitDao.save(commit);
 				}else if(commit != null && commit.getChangedPaths() != null && commit.getChangedPaths().isEmpty() && collectChangedPaths){
 					commit.setChangedPaths(findChangedPathsBySVNLogEntry(svnLogEntry, commit, ignoredPaths));
 					commitDao.update(commit);
@@ -273,7 +277,6 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 		} catch (SVNException e) {
 			e.printStackTrace();
 		}
-		commitDao.save(commit);
 		return commit;
 	}
 

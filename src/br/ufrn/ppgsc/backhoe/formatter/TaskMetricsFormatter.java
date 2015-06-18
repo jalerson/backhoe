@@ -1,5 +1,6 @@
 package br.ufrn.ppgsc.backhoe.formatter;
 
+import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
@@ -19,12 +20,12 @@ public class TaskMetricsFormatter extends AbstractFormatter {
 	}
 
 	@Override
-	public void format() {
+	public File format() {
 		// TODO Auto-generated method stub
 		String contentFile = generateContentFileCSV(startDate, endDate, developers);
 		String fileName = systemName+"_"+getHumanizedStartDate()+"_"+getHumanizedEndDate()+"_TaskMetrics.csv";
 		String filePathAndName = getDirPath()+ "/" + fileName;
-		createCSV(contentFile, filePathAndName);
+		return createCSV(contentFile, filePathAndName);
 
 	}
 	

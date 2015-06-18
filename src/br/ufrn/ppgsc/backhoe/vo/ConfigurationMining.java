@@ -2,8 +2,8 @@ package br.ufrn.ppgsc.backhoe.vo;
 
 import java.sql.Date;
 import java.util.ArrayList;
-import java.util.Arrays;
 
+import br.ufrn.ppgsc.backhoe.enums.MinerType;
 import br.ufrn.ppgsc.backhoe.formatter.BugFixContributionFormatter;
 import br.ufrn.ppgsc.backhoe.formatter.BuggyCommitFormatter;
 import br.ufrn.ppgsc.backhoe.formatter.CodeComplexityFormatter;
@@ -11,14 +11,15 @@ import br.ufrn.ppgsc.backhoe.formatter.CodeContributionFormatter;
 import br.ufrn.ppgsc.backhoe.formatter.FailedTestsFormatter;
 import br.ufrn.ppgsc.backhoe.formatter.Formatter;
 import br.ufrn.ppgsc.backhoe.formatter.TaskMetricsFormatter;
+import br.ufrn.ppgsc.backhoe.formatter.UnifiedContributionFormatter;
 import br.ufrn.ppgsc.backhoe.miner.BugFixContributionMiner;
 import br.ufrn.ppgsc.backhoe.miner.BuggyCommitMiner;
 import br.ufrn.ppgsc.backhoe.miner.CodeComplexityMiner;
 import br.ufrn.ppgsc.backhoe.miner.CodeContributionMiner;
 import br.ufrn.ppgsc.backhoe.miner.FailedTestsMiner;
 import br.ufrn.ppgsc.backhoe.miner.Miner;
-import br.ufrn.ppgsc.backhoe.miner.MinerType;
 import br.ufrn.ppgsc.backhoe.miner.TaskMiner;
+import br.ufrn.ppgsc.backhoe.miner.UnifiedContributionMiner;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
 import br.ufrn.ppgsc.backhoe.repository.local.LocalRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
@@ -49,6 +50,12 @@ public class ConfigurationMining {
 	}
 
 	public ArrayList<String> getTeam() {
+		/**
+		SIGAA = 2
+		SIPAC = 3
+		SIGRH = 4
+		SUCUPIRA = 29
+		*/
 		switch(system) {
 			default: System.err.println("Set the variable system with one of the listed values (2, 3, 4, 29)");
 					 return null;
@@ -63,6 +70,7 @@ public class ConfigurationMining {
 			case CODECOMPLEXITY_MINER: return new CodeComplexityMiner(system, codeRepository, taskRepository, startDate, endDate, getTeam(), ignoredPaths);
 			case BUGFIX_CONTRIBUTION_MINER: return new BugFixContributionMiner(system, codeRepository, taskRepository, startDate, endDate, getTeam(), ignoredPaths);
 			case TASK_MINER: return new TaskMiner(system, codeRepository, taskRepository, startDate, endDate, getTeam(), ignoredPaths);
+			case UNIFIED_CONTRIBUTION_MINER: return new UnifiedContributionMiner(system, codeRepository, taskRepository, startDate, endDate, getTeam(), ignoredPaths);
 			default: return null;
 		}
 	}
@@ -75,6 +83,7 @@ public class ConfigurationMining {
 			case CODECOMPLEXITY_MINER: return new CodeComplexityFormatter(startDate, endDate, getTeam(), localRepository, getMinerName(), getSystemName());
 			case BUGFIX_CONTRIBUTION_MINER: return new BugFixContributionFormatter(startDate, endDate, getTeam(), localRepository, getMinerName(), getSystemName());
 			case TASK_MINER: return new TaskMetricsFormatter(startDate, endDate, getTeam(), localRepository, getMinerName(), getSystemName());
+			case UNIFIED_CONTRIBUTION_MINER: return new UnifiedContributionFormatter(startDate, endDate, getTeam(), localRepository, getMinerName(), getSystemName());
 			default: return null;
 		}
 	}

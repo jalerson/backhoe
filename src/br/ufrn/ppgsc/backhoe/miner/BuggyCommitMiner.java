@@ -68,7 +68,7 @@ public class BuggyCommitMiner extends AbstractMiner {
 		System.out.print("Finding TaskLog on iProject... ");
 		List<TaskLog> logs = taskRepository.findBuggedTaskLogs(tasks, developers);
 		System.out.println("Done!");
-		System.out.print("Fiding changed files from iProject logs... ");
+		System.out.print("Finding changed files from iProject logs... ");
 		List<ChangedPath> changedPaths = codeRepository.getChangedPathsFromLogTarefas(logs);
 		System.out.println("Done!");
 		System.out.println("Building Diffs... ");

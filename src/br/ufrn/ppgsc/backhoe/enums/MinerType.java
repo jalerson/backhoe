@@ -1,4 +1,4 @@
-package br.ufrn.ppgsc.backhoe.miner;
+package br.ufrn.ppgsc.backhoe.enums;
 
 public enum MinerType {
 	BUGGY_COMMIT_MINER,
@@ -6,5 +6,6 @@ public enum MinerType {
 	CODE_CONTRIBUTION_MINER,
 	CODECOMPLEXITY_MINER,
 	BUGFIX_CONTRIBUTION_MINER,
-	TASK_MINER
+	TASK_MINER,
+	UNIFIED_CONTRIBUTION_MINER
 }

@@ -196,6 +196,19 @@ public class IProjectRepository extends AbstractRepository implements TaskReposi
 		return findTaskLogsFromTasks(tasks, logTypeIDs, developers);
 	}
 	
+	public List<TaskLog> findBugFixTaskLogs(Date startDate, Date endDate, long[] systems, List<String> developers) {
+		
+		/* id_tipo_log in 
+		 *  1  - DESENVOLVIMENTO
+		 *  13 - SOLICITAÇÃO DE UPDATE EM PRODUÇÃO
+		 */ 
+		
+		long[] logTypeIDs = {1, 13};
+		long[]  bugFixTaskTypeIDs = {103L, 102L, 106L, 4L, 44L, 46L, 
+				 47L, 43L, 49L, 51L, 52L};
+		return findTaskLogs(logTypeIDs, developers, startDate, endDate, bugFixTaskTypeIDs, null, systems);
+	}
+	
 	public List<TaskLog> findFiledTestsTaskLogs(List<Task> tasks, List<String> developers){
 		
 		/* id_tipo_log in 
@@ -275,6 +288,90 @@ public class IProjectRepository extends AbstractRepository implements TaskReposi
 			return tasks;
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public List<TaskLog> findTaskLogs(long[] logTypeIDs,
+									  List<String> developers,
+									  Date startDate, Date endDate,
+									  long[] taskTypeIDs,
+									  long[] taskStatusIDs,
+									  long[] systems){
+		
+		ArrayList<TaskLog> logs = new ArrayList<TaskLog>();
+		String sql = "SELECT usuario.login, log_tarefa.*, tarefa.* from iproject.log_tarefa"+
+						" INNER JOIN iproject.tarefa on tarefa.id_tarefa = log_tarefa.id_tarefa"+
+						" INNER JOIN comum.usuario ON tarefa.id_responsavel = usuario.id_usuario"+
+						" where log_tarefa.data between '"+startDate+"' and '"+endDate+"'";
+		
+		sql = sql.replace("[startDate]", startDate.toString());
+		sql = sql.replace("[endDate]", endDate.toString());
+		
+		if(logTypeIDs != null && logTypeIDs.length != 0){
+			sql += "  AND id_tipo_log IN " + preparePlaceholders(logTypeIDs) ;
+		}
+		
+		if(systems != null && systems.length != 0){
+			sql += " AND tarefa.id_subsistema in (select id_sub_sistema from "
+					+ "iproject.subsistema where id_sistema in "+ preparePlaceholders(systems)+")";
+		}
+		if(taskTypeIDs != null && taskTypeIDs.length != 0){
+			sql +=  "AND tarefa.id_tipo_tarefa in "+ preparePlaceholders(taskTypeIDs);
+		}
+		if(taskStatusIDs != null && taskStatusIDs.length != 0){
+			sql += " AND tarefa.id_status in "+ preparePlaceholders(taskStatusIDs);
+		}
+		
+		try {
+			Statement stm = this.connection.createStatement();
+			ResultSet rs = stm.executeQuery(sql);
+
+			while (rs.next()){
+				String login = rs.getString("login");
+				Developer developer = developerDAO.findByCodeRepositoryUsername(login);
+				if(developer == null){
+					developer = new Developer();
+					developer.setCodeRepositoryUsername(login);
+					developerDAO.save(developer);
+				}
+				
+				Long taskID = rs.getLong("id_tarefa");
+				Task task = taskDAO.findByID(taskID);
+				if(task == null){
+					TaskType taskType = taskTypeDAO.findByID(rs.getLong("id_tipo_tarefa"));
+					TaskPriority taskPriority = taskPriorityDAO.findByID(rs.getLong("id_prioridade"));
+					TaskStatus taskStatus = taskStatusDAO.findByID(rs.getLong("id_status"));
+					Project project = projectDAO.findByID(rs.getLong("id_projeto"));
+					String title = rs.getString("titulo");
+					Date createdAt = rs.getDate("data_cadastro");
+					task = new Task(taskID, title, createdAt, null, taskType, taskPriority, taskStatus,project, developer);
+					taskDAO.save(task);
+				}
+				
+				Long logID = rs.getLong("id");
+				TaskLog log = taskLogDAO.findByID(logID);
+				if(log == null){
+					log = new TaskLog();
+					TaskLogType taskLogType = taskLogTypeDAO.findByID(rs.getLong("id_tipo_log"));
+					log.setId(logID);
+					log.setCreatedAt(rs.getDate("data"));
+					log.setDescription(rs.getString("log"));
+					log.setTask(task);
+					Developer author = getAuthor(rs.getString("log"), developers);
+					if(author != null) {
+						log.setAuthor(author);
+					} else {
+						log.setAuthor(developer);
+					}
+					log.setType(taskLogType);
+					taskLogDAO.save(log);
+				}
+				logs.add(log);
+			}
+			return logs;
+		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return null;
