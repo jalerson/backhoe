@@ -68,7 +68,8 @@ public class RunCodeContributionMiner {
 //			formatter.format();
 //		}
 		
-		ConfigurationMining unifiedContribution = new ConfigurationMining(MinerType.UNIFIED_CONTRIBUTION_MINER, teamNumber, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository);
+//		ConfigurationMining unifiedContribution = new ConfigurationMining(MinerType.UNIFIED_CONTRIBUTION_MINER, teamNumber, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository);
+		ConfigurationMining unifiedContribution = new ConfigurationMining(MinerType.TASK_MINER, teamNumber, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository);
 		
 		Miner unifiedContributionMiner = unifiedContribution.getMiner();
 		unifiedContributionMiner.setup();

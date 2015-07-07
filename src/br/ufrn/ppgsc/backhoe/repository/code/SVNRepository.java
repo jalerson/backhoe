@@ -199,19 +199,26 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 	
 	public List<Commit> findCommitsFromLogs(List<TaskLog> logs, boolean collectChangedPaths, List<String> ignoredPaths){
 		Map<Long, Commit> commitsMAP = new HashMap<Long, Commit>();
-		if(!logs.isEmpty())
+		if(!logs.isEmpty()){
+			int count = 1;
 			for(TaskLog log: logs){
+				System.out.print("Processing log "+count+++"/"+logs.size()+"...");
 				List<Commit> commits = this.findCommitsFromLog(log, collectChangedPaths, ignoredPaths);
 				for(Commit commit: commits){
 					if(!commitsMAP.containsKey(commit.getRevision()))
 						commitsMAP.put(commit.getRevision(), commit);
 				}
+				System.out.println("Done!");
 			}
+		}
 		return new ArrayList<Commit>(commitsMAP.values());
 	}
 	
 	public List<Commit> findCommitsFromLog(TaskLog log, boolean collectChangedPaths, List<String> ignoredPaths){
 		Set<Long> revisions = new HashSet<Long>();
+		
+		List<Commit> commits = new ArrayList<Commit>();
+		
 		if(log.getRevisions() != null && !log.getRevisions().isEmpty()){
 			String[] revisionsIDs = log.getRevisions().replaceAll(" ", "").split(",");
 			for(int i = 0; i < revisionsIDs.length; i++){
@@ -221,61 +228,64 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 					e.printStackTrace();
 				}
 			}
-		}
-		
-		Pattern pattern = Pattern.compile("(Revisão|revisão|Revisao|revisao|#)"
-				+ "(:| |) "
-				+ "(\\d+)");
-		
-		if(log.getDescription() != null && !log.getDescription().isEmpty()){
-			Matcher matcher = pattern.matcher(log.getDescription());
-			if (matcher.find()){
-				revisions.add(Long.parseLong(matcher.group(3)));
+			
+			Pattern pattern = Pattern.compile("(Revisão|revisão|Revisao|revisao|#)"
+					+ "(:| |) "
+					+ "(\\d+)");
+			
+			if(log.getDescription() != null && !log.getDescription().isEmpty()){
+				Matcher matcher = pattern.matcher(log.getDescription());
+				if (matcher.find()){
+					revisions.add(Long.parseLong(matcher.group(3)));
+				}
 			}
-		}
 
-		List<Commit> commits = new ArrayList<Commit>();
-		for(Long revision: revisions){
-			Commit commit = commitDao.findByRevision(revision); // find in local bd
-			if(commit == null)
-				commit = findCommitByRevision(revision, collectChangedPaths, ignoredPaths); // find in svn repository
-			if(commit != null){
-				commit.setTask(log.getTask());
-				commitDao.update(commit);
-				commits.add(commit);
+			for(Long revision: revisions){
+				Commit commit = commitDao.findByRevision(revision); // find in local bd
+				if(commit == null){
+					commit = findCommitByRevision(revision, collectChangedPaths, ignoredPaths); // find in svn repository
+				}else{
+					commit.setTask(log.getTask());
+					commitDao.update(commit);
+					commits.add(commit);
+				}
 			}
-		}
+
+		}		
 		return commits;
 	}
 	
 	public Commit findCommitByRevision(Long revision,  boolean collectChangedPaths, List<String> ignoredPaths){
-		Commit commit = null;
-		try {
-			SvnOperationFactory svnOperationFactory = new SvnOperationFactory();
-			svnOperationFactory.setAuthenticationManager(repository.getAuthenticationManager());
-			SvnLog log = svnOperationFactory.createLog();
-			log.addTarget(SvnTarget.fromURL(SVNURL.parseURIEncoded(url)));
-			log.addRange(SvnRevisionRange.create(SVNRevision.create(revision), SVNRevision.create(revision)));
-			log.setDiscoverChangedPaths(true);
-			log.setDepth(SVNDepth.INFINITY);
-			ArrayList<SVNLogEntry> svnLogEntries = new ArrayList<SVNLogEntry>();
-			log.run(svnLogEntries);
-			
-			if(svnLogEntries != null && !svnLogEntries.isEmpty()){
-				if(svnLogEntries.size() > 1)
-					throw new NonUniqueCommitByRevisionException("More of one commit was found by one revision");
-				SVNLogEntry svnLogEntry = svnLogEntries.iterator().next();
-				commit = commitDao.findByRevision(svnLogEntry.getRevision());
-				if(commit == null) {
+		Commit commit = commitDao.findByRevision(revision);
+		if(commit == null){
+			try {
+				SvnOperationFactory svnOperationFactory = new SvnOperationFactory();
+				svnOperationFactory.setAuthenticationManager(repository.getAuthenticationManager());
+				SvnLog log = svnOperationFactory.createLog();
+				log.addTarget(SvnTarget.fromURL(SVNURL.parseURIEncoded(url)));
+				log.addRange(SvnRevisionRange.create(SVNRevision.create(revision), SVNRevision.create(revision)));
+				log.setDiscoverChangedPaths(true);
+				log.setDepth(SVNDepth.INFINITY);
+				ArrayList<SVNLogEntry> svnLogEntries = new ArrayList<SVNLogEntry>();
+				log.run(svnLogEntries);
+				
+				if(svnLogEntries != null && !svnLogEntries.isEmpty()){
+					if(svnLogEntries.size() > 1)
+						throw new NonUniqueCommitByRevisionException("More of one commit was found by one revision");
+					
+					SVNLogEntry svnLogEntry = svnLogEntries.iterator().next();
+						
 					commit = createCommit(svnLogEntry, collectChangedPaths, ignoredPaths);
 					commitDao.save(commit);
-				}else if(commit != null && commit.getChangedPaths() != null && commit.getChangedPaths().isEmpty() && collectChangedPaths){
-					commit.setChangedPaths(findChangedPathsBySVNLogEntry(svnLogEntry, commit, ignoredPaths));
-					commitDao.update(commit);
+					
+//					else if(commit != null && commit.getChangedPaths() != null && commit.getChangedPaths().isEmpty() && collectChangedPaths){
+//						commit.setChangedPaths(findChangedPathsBySVNLogEntry(svnLogEntry, commit, ignoredPaths));
+//						commitDao.update(commit);
+//					}
 				}
+			} catch (SVNException e) {
+				e.printStackTrace();
 			}
-		} catch (SVNException e) {
-			e.printStackTrace();
 		}
 		return commit;
 	}
@@ -561,8 +571,13 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 	public List<Blame> buildBlames(List<Diff> diffs) {
 		
 		SVNLogClient logClient = svnClientManager.getLogClient();
+		
+		List<Blame> analizedBlames = new ArrayList<Blame>();
 
+		int count = 1;
 		for (Diff diff : diffs) {
+			
+			System.out.print("Analizing diff "+(count++)+"/"+diffs.size()+" to build blames...");
 			SVNRevision svnFixingRevision = SVNRevision.create(diff
 					.getFixingRevision());
 			SVNRevision svnStartRevision = SVNRevision.create(diff
@@ -582,12 +597,14 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 						svnPreviousRevision, blameHandler);
 
 				List<Blame> blames = (List<Blame>) blameHandler.getBlameList();
-				return analyzeBlames(blames, diff);
+				analizedBlames.addAll(analyzeBlames(blames, diff));
 			} catch (SVNException e) {
 				e.printStackTrace();
 			}
+			
+			System.out.println("Done!");
 		}
-		return new ArrayList<Blame>();
+		return analizedBlames;
 	}
 	
 	private List<Blame> analyzeBlames(List<Blame> blames, Diff diff) {

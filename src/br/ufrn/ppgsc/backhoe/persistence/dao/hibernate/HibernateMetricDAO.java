@@ -10,6 +10,8 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Metric;
 public class HibernateMetricDAO extends HibernateGenericDAO<Metric, Long> implements AbstractMetricDAO {
 	
 	public boolean existsMetricToType(Long objectID, Long metricTypeID){
+		getSession().clear();
+		getSession().flush();
 		String sql = "from Metric m, MetricType mt " +
 				     "where m.type.id = mt.id and " +
 				     "m.objectId = :objectId and " +
@@ -19,10 +21,14 @@ public class HibernateMetricDAO extends HibernateGenericDAO<Metric, Long> implem
 		query.setParameter("objectId", objectID);
 		query.setParameter("metricTypeID", metricTypeID);
 		
-		return query.uniqueResult() == null? false: true;
+		boolean result = query.uniqueResult() == null? false: true;
+		
+		return result;
 	}
 	
 	public boolean existsMetric(Long objectID, String minerSlug){
+		getSession().clear();
+		getSession().flush();
 		String sql = "from Metric m " +
 				     "where m.objectId = :objectId and " +
 				     "m.minerSlug = :minerSlug";
@@ -31,10 +37,14 @@ public class HibernateMetricDAO extends HibernateGenericDAO<Metric, Long> implem
 		query.setParameter("objectId", objectID);
 		query.setParameter("minerSlug", minerSlug);
 		
-		return query.uniqueResult() == null? false: true;
+		boolean result = query.uniqueResult() == null? false: true;
+		
+		return result;
 	}
 	
 	public boolean existsMetric(Long objectID, String minerSlug, Date startDateInterval, Date endDateInterval){
+		getSession().clear();
+		getSession().flush();
 		String sql = "from Metric m " +
 				     "where m.objectId = :objectId and " +
 				     "m.minerSlug = :minerSlug and " +
@@ -47,6 +57,8 @@ public class HibernateMetricDAO extends HibernateGenericDAO<Metric, Long> implem
 		query.setParameter("startDateInterval", startDateInterval);
 		query.setParameter("endDateInterval", endDateInterval);
 		
-		return query.uniqueResult() == null? false: true;
+		boolean result = query.uniqueResult() == null? false: true;
+		
+		return result;
 	}
 }

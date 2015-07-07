@@ -3,6 +3,7 @@ package br.ufrn.ppgsc.backhoe.persistence.model;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -15,6 +16,7 @@ public class Developer implements Model {
 	private Long id;
 	private String name;
 	private String email;
+	@Column(unique = true)
 	private String codeRepositoryUsername;
 	private String taskRepositoryUsername;
 	@OneToMany(mappedBy = "createdBy")

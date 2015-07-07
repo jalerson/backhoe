@@ -9,9 +9,8 @@ public class Main {
 
 	public static void main(String[] args) {
 		
-		File csvResult = RunCodeContributionMiner.generateCSVWithMetrics(Team.SIGAA, Date.valueOf("2015-02-09"), Date.valueOf("2015-02-10"));
+		File csvResult = RunCodeContributionMiner.generateCSVWithMetrics(Team.SIGAA, Date.valueOf("2015-02-09"), Date.valueOf("2015-05-15"));
 		
 		System.exit(0);
-		
 	}
 }

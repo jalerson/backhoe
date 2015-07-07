@@ -15,3 +15,4 @@ config/postgres.properties
 /bin/
 /results
 /config
+/repositories

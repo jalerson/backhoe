@@ -10,6 +10,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
 import br.ufrn.ppgsc.backhoe.persistence.dao.abs.AbstractDAO;
+import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 
 public abstract class HibernateGenericDAO<T, ID extends Serializable> implements AbstractDAO<T, ID>{
 	
@@ -17,10 +18,10 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
 	
 	@SuppressWarnings("deprecation")
 	public HibernateGenericDAO() {
-		Configuration config = new Configuration();
-		config.configure("hibernate.cfg.xml");
-		SessionFactory factory = config.buildSessionFactory();
-		session = factory.openSession();
+//		Configuration config = new Configuration();
+//		config.configure("hibernate.cfg.xml");
+//		SessionFactory factory = config.buildSessionFactory();
+//		session = factory.openSession();
 	}
 	
 	 protected Session getSession(){  
@@ -45,12 +46,14 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
  
     public void save(T obj) {
     	try{
-	        getSession().clear();
-			getSession().flush();
 			getSession().beginTransaction();
+			getSession().clear();
+			getSession().flush();
 	        getSession().persist(obj);
 	        getSession().getTransaction().commit();
     	}catch (Exception e) {
+    		if(obj instanceof Commit)
+    			System.out.println((Commit) obj);
     		e.printStackTrace();
 			getSession().getTransaction().rollback();
 		}finally{
@@ -116,10 +119,13 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
 	public boolean saveOrUpdateAll(List<T> objects) {
 		boolean savedAll = true;
 		try{
+			getSession().clear();
+    		getSession().flush();
+    		
 	    	getSession().beginTransaction();
 	    	for(T object: objects)
 	    		getSession().saveOrUpdate(object);
-	    	getSession().flush();
+
 	    	getSession().getTransaction().commit();
 		}catch (Exception e) {
 			savedAll = false;
@@ -133,10 +139,13 @@ public abstract class HibernateGenericDAO<T, ID extends Serializable> implements
 	@Override
 	public void save(List<T> objects) {
 		try{
+			getSession().clear();
+    		getSession().flush();
+    		
 			getSession().beginTransaction();
 			for (T object : objects)
 				getSession().persist(object);
-			getSession().flush();
+			
 			getSession().getTransaction().commit();
 		}catch (Exception e) {
 			getSession().getTransaction().rollback();

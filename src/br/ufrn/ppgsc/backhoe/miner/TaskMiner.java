@@ -30,20 +30,20 @@ public class TaskMiner extends AbstractMiner {
 	@Override
 	public void execute() {
 		// TODO Auto-generated method stub
-		System.out.println("\nCalculating Metrics for Task Miner...");
+		System.out.println("\nCalculating Metrics for Task Miner..."+startDate.toString()+ " | " + endDate.toString());
 		long[] systems = {system};
 		System.out.print("Researching Tasks in iproject... ");
 		List<Task> tasks = taskRepository.findTasks(startDate, endDate, null, null, systems);
 		if(tasks.isEmpty()){
 			System.out.println("\nNo tasks founded, finishing mineration!");
 		}else{
-			System.out.println("Done!");
+			System.out.println(tasks.size()+ " Done!");
 			System.out.print("Researching TasksLog from Tasks... ");
 			List<TaskLog> logs = taskRepository.findTaskLogsFromTasks(tasks, null, developers);
-			System.out.println("Done!");
+			System.out.println(logs.size()+" Done!");
 			System.out.print("Fiding commits from TasksLogs... ");
 			List<Commit> commits = codeRepository.findCommitsFromLogs(logs, true, ignoredPaths);
-			System.out.println("Done!");
+			System.out.println(commits.size()+" Done!");
 	
 			List<Miner> miners = new LinkedList<Miner>();
 			

@@ -4,9 +4,7 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import br.ufrn.ppgsc.backhoe.repository.local.LocalRepository;
 
@@ -44,39 +42,39 @@ public class TaskMetricsFormatter extends AbstractFormatter {
 					 "		 			 where c.author_id in (select id from Developer " +
 					 "							 			  where codeRepositoryUsername in :developerLogins)) "+
 					 "and t.createdAt between ':startDateInterval' and ':endDateInterval' "+
-					 "group by d.codeRepositoryUsername, t.id, mt.slug, c.revision";
+					 "group by d.codeRepositoryUsername, t.id, c.revision, m.objectId, mt.slug;";
 		
 		sql = sql.replace(":startDateInterval", startDateInterval.toString());
 		sql = sql.replace(":endDateInterval", endDateInterval.toString());
 		sql = sql.replace(":developerLogins", sqlListFormatter(developers));
 		
-		Map<String, // Developer
-			Map<Long, // Tasks
-			Map<Long, // Commits
-			Map<Long, // ChangedPaths
-			List<Integer>>>>> tasksByDeveloperMAP = new HashMap<String, 
-														Map<Long, 
-														Map<Long, 
-														Map<Long, 
-														List<Integer>>>>>();
-		
-		for (String developer : developers){
-			tasksByDeveloperMAP.put(developer, new HashMap<Long, 
-												   Map<Long, 
-												   Map<Long, 
-												   List<Integer>>>>());
-		}
+//		Map<String, // Developer
+//			Map<Long, // Tasks
+//			Map<Long, // Commits
+//			Map<Long, // ChangedPaths
+//			List<Integer>>>>> tasksByDeveloperMAP = new HashMap<String, 
+//														Map<Long, 
+//														Map<Long, 
+//														Map<Long, 
+//														List<Integer>>>>>();
+//		
+//		for (String developer : developers){
+//			tasksByDeveloperMAP.put(developer, new HashMap<Long, 
+//												   Map<Long, 
+//												   Map<Long, 
+//												   List<Integer>>>>());
+//		}
 		
 		// ADDED LOC, CHANGED LOC, REMOVED LOC,	ADDED METHODS, CHANGED METHODS, ADDED COMPLEXITY, CHANGED COMPLEXITY
 		
-		Map<String, Integer> metricToArrayPosition = new HashMap<String, Integer>();
-		metricToArrayPosition.put("loc:added", 0);
-		metricToArrayPosition.put("loc:changed", 1);
-		metricToArrayPosition.put("loc:deleted", 2);
-		metricToArrayPosition.put("methods:added", 3);
-		metricToArrayPosition.put("methods:changed", 4);
-		metricToArrayPosition.put("complexity:added", 5);
-		metricToArrayPosition.put("complexity:changed", 6);
+//		Map<String, Integer> metricToArrayPosition = new HashMap<String, Integer>();
+//		metricToArrayPosition.put("loc:added", 0);
+//		metricToArrayPosition.put("loc:changed", 1);
+//		metricToArrayPosition.put("loc:deleted", 2);
+//		metricToArrayPosition.put("methods:added", 3);
+//		metricToArrayPosition.put("methods:changed", 4);
+//		metricToArrayPosition.put("complexity:added", 5);
+//		metricToArrayPosition.put("complexity:changed", 6);
 		
 		try {
 			ResultSet rs = localRepository.getConection().createStatement().executeQuery(sql);

@@ -9,8 +9,8 @@ public class HibernateDeveloperDAO extends HibernateGenericDAO<Developer, Long> 
 
 	@Override
 	public Developer findByCodeRepositoryUsername(String username) {
+		getSession().clear();
 		getSession().flush();
-    	getSession().clear();
 		Query query = getSession().createQuery("from Developer u where u.codeRepositoryUsername = :username");
 		query.setParameter("username", username);
 		return (Developer) query.uniqueResult();
