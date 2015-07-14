@@ -45,28 +45,22 @@ public class RunCodeContributionMinerPerWeek {
 		localRepository.setPassword(localRepositoryProperties.getProperty("password"));
 		localRepository.setURL(localRepositoryProperties.getProperty("url"));
 		
-		Date startDate = Date.valueOf("2015-05-28");
-		//2015-05-28
-		Date endDate = Date.valueOf("2015-07-01");
+		Date startDate = Date.valueOf("2014-07-01");
+		Date endDate = Date.valueOf("2014-12-31");
 
 		ArrayList<String> ignoredPaths = new ArrayList<String>(Arrays.asList(new String[]{ "/trunk/LPS", "/ExemploIntegracaoSIAFI", "/branches" }));
 	
 		ArrayList<ConfigurationMining> configurations = new ArrayList<ConfigurationMining>();
 		
-		List<Date> dateIntervals = genenateDateIntervalPerWeek(startDate, endDate);
+		List<DateInterval> dateIntervals = genenateDateIntervalPerWeek(startDate, endDate);
 		
-		for(int j = 0; j + 1 < dateIntervals.size(); j ++){
+		for(DateInterval intervalMining: dateIntervals){
 		
 			int[] teams = {Team.SIGAA, Team.SIPAC};
 			
 			for(int i = 0; i < teams.length; i++){
-//				configurations.add(new ConfigurationMining(MinerType.CODE_CONTRIBUTION_MINER, teams[i], dateIntervals.get(j), dateIntervals.get(j+1), ignoredPaths, codeRepository, tasktRepository, localRepository));
-//				configurations.add(new ConfigurationMining(MinerType.CODECOMPLEXITY_MINER, teams[i], dateIntervals.get(j), dateIntervals.get(j+1), ignoredPaths, codeRepository, tasktRepository, localRepository));
-//				configurations.add(new ConfigurationMining(MinerType.BUGFIX_CONTRIBUTION_MINER, teams[i], dateIntervals.get(j), dateIntervals.get(j+1), ignoredPaths, codeRepository, tasktRepository, localRepository));
-//				configurations.add(new ConfigurationMining(MinerType.BUGGY_COMMIT_MINER, teams[i], dateIntervals.get(j), dateIntervals.get(j+1), ignoredPaths, codeRepository, tasktRepository, localRepository));
-//				configurations.add(new ConfigurationMining(MinerType.FAILED_TESTS_MINER, teams[i], dateIntervals.get(j), dateIntervals.get(j+1), ignoredPaths, codeRepository, tasktRepository, localRepository));
-//				configurations.add(new ConfigurationMining(MinerType.TASK_MINER, teams[i], dateIntervals.get(j), dateIntervals.get(j+1), ignoredPaths, codeRepository, tasktRepository, localRepository));		
-				configurations.add(new ConfigurationMining(MinerType.UNIFIED_CONTRIBUTION_MINER, teams[i], dateIntervals.get(j), dateIntervals.get(j+1), ignoredPaths, codeRepository, tasktRepository, localRepository));
+				configurations.add(new ConfigurationMining(MinerType.TASK_MINER, teams[i], intervalMining.getStartDate(), intervalMining.getEndDate(), ignoredPaths, codeRepository, tasktRepository, localRepository));		
+				configurations.add(new ConfigurationMining(MinerType.UNIFIED_CONTRIBUTION_MINER, teams[i], intervalMining.getStartDate(), intervalMining.getEndDate(), ignoredPaths, codeRepository, tasktRepository, localRepository));
 			}
 		}
 		
@@ -85,7 +79,7 @@ public class RunCodeContributionMinerPerWeek {
 		
 	}
 	
-	private static List<Date> genenateDateIntervalPerWeek(Date startDate, Date endDate){
+	private static List<DateInterval> genenateDateIntervalPerWeek(Date startDate, Date endDate){
 		
 		Calendar start = Calendar.getInstance();
 		start.setTime(startDate);
@@ -93,13 +87,52 @@ public class RunCodeContributionMinerPerWeek {
 		Calendar end = Calendar.getInstance();
 		end.setTime(endDate);
 
-		List<Date> datesBetween = new ArrayList<Date>();
+		List<DateInterval> datesBetween = new ArrayList<DateInterval>();
 
-		while (start.compareTo(end) <= 0) {
-		   datesBetween.add(new Date(start.getTimeInMillis()));
-		   start.add(Calendar.DAY_OF_MONTH, 7);
+		while (start.compareTo(end) < 0){
+			Calendar startDateIntervalAux = (Calendar) start.clone();
+			startDateIntervalAux.add(Calendar.DAY_OF_MONTH, start.getActualMaximum(Calendar.DAY_OF_MONTH) -1);
+			
+			datesBetween.add(new DateInterval(new Date(start.getTimeInMillis()), 
+					new Date(startDateIntervalAux.getTimeInMillis())));
+		
+			start.add(Calendar.DAY_OF_MONTH, start.getActualMaximum(Calendar.DAY_OF_MONTH));
 		}
 		
 		return datesBetween;
+	}
+}
+
+class DateInterval{
+
+	private Date startDate,
+				 endDate;
+	
+	public DateInterval(Date startDate, Date endDate) {
+		super();
+		this.startDate = startDate;
+		this.endDate = endDate;
+	}
+
+	public Date getStartDate() {
+		return startDate;
+	}
+
+	public void setStartDate(Date startDate) {
+		this.startDate = startDate;
+	}
+
+	public Date getEndDate() {
+		return endDate;
+	}
+
+	public void setEndDate(Date endDate) {
+		this.endDate = endDate;
+	}
+
+	@Override
+	public String toString() {
+		return "DateInterval [startDate=" + startDate + ", endDate=" + endDate
+				+ "]";
 	}
 }

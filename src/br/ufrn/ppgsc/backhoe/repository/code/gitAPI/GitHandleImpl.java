@@ -246,4 +246,32 @@ public class GitHandleImpl implements GitHandle {
 		
 		return fileRevisions;
 	}
+
+	@Override
+	public GITLogEntry getCommitInformations(String revision)
+			throws GitAPIException {
+		
+		if(revision == null || revision.isEmpty())
+			throw new GitAPIException("The informed revision is not valid!");
+		
+		String[] command = new String[] { "git", "show", "--pretty=format:%H %ae %ad %B", 
+				"--date=short", 
+				revision};
+		
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(executeGitCommand(command)));
+			String commitInfoLine = br.readLine();
+			
+			if(commitInfoLine == null || commitInfoLine.startsWith("fatal: "))
+				throw new GitAPIException("The informed revision is not valid!");
+			
+			return commitInformationLineHandle(commitInfoLine);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch(GitAPIException e){
+			throw(e);
+		}
+		return null;
+	}
 }

@@ -14,4 +14,6 @@ public interface GitHandle {
 	
 	List<String> getFileRevisions(String path, String startRevision, String endRevision) throws GitAPIException;
 	
+	GITLogEntry getCommitInformations(String revision) throws GitAPIException;
+	
 }
