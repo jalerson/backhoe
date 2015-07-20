@@ -4,6 +4,6 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 
 public interface AbstractCommitDAO extends AbstractDAO<Commit, Long> {
 	
-	public Commit findByRevision(Long revision);
+	public Commit findByRevision(String revision);
 	
 }

@@ -28,12 +28,20 @@ public class MethodWrapper {
 	public String getName() {
 		return methodDeclaration.getName().getFullyQualifiedName();
 	}
+	
+	public String getFullName(){
+		String methodBody = methodDeclaration.toString();	
+		int begin = methodBody.indexOf(methodDeclaration.getName().getFullyQualifiedName());
+		methodBody = methodBody.substring(begin); // methodBody without annotations
+		int end = methodBody.indexOf(")");
+		return methodBody.substring(0, end+1);
+	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if(obj instanceof MethodWrapper) {
 			MethodWrapper method = (MethodWrapper) obj;
-			if(this.getName().equals(method.getName())) {
+			if(this.getFullName().equals(method.getFullName())) {
 				return true;
 			}
 		}

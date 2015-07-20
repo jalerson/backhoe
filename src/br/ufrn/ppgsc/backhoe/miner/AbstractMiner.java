@@ -1,6 +1,6 @@
 package br.ufrn.ppgsc.backhoe.miner;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.List;
 
 import br.ufrn.ppgsc.backhoe.exceptions.DAONotFoundException;
@@ -37,7 +37,7 @@ public abstract class AbstractMiner implements Miner{
 		this.ignoredPaths = ignoredPaths;
 		this.system = system;
 	}
-	
+
 	public boolean setup() throws MissingParameterException {	
 		
 		if(codeRepository == null) {

@@ -1,6 +1,6 @@
 package br.ufrn.ppgsc.backhoe.miner;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -8,6 +8,7 @@ import br.ufrn.ppgsc.backhoe.exceptions.MissingParameterException;
 import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
+import br.ufrn.ppgsc.backhoe.vo.ConfigurationMining;
 
 public class UnifiedContributionMiner extends AbstractMiner{
 	
@@ -24,13 +25,27 @@ public class UnifiedContributionMiner extends AbstractMiner{
 
 	@Override
 	public boolean setupMinerSpecific() throws MissingParameterException {
+		System.out.println("\n=========================================================");
+		System.out.println("UNIFIED CONTRIBUTION MINER: "+ConfigurationMining.getSystemName(system).toUpperCase()+ " TEAM");
+		System.out.println("---------------------------------------------------------");
+	
+		System.out.print("\n>> BACKHOE is connecting to CODE and TASK REPOSITORIES ... ");
+		boolean connected = taskRepository.connect() && codeRepository.connect();
+		if(connected)
+			System.out.println("Done!");
+		else
+			System.out.println("Failed!");
+		
 		return taskRepository.connect() && codeRepository.connect();
 	}
 
 	@Override
 	public void execute() {
 		// TODO Auto-generated method stub
-		System.out.println("\nCalculating Unified Contribution Miner...");
+		
+		System.out.println("\n---------------------------------------------------------");
+		System.out.println("BACKHOE - CALCULATE UNIFIED CONTRIBUTION MINER METRICS");
+		System.out.println("---------------------------------------------------------");
 			
 		List<Commit> commits;
 
@@ -62,6 +77,8 @@ public class UnifiedContributionMiner extends AbstractMiner{
 		    miner.execute();
 		}
 		
-		System.out.println("Unified Contribution Miner executed!\n");
+		System.out.println("\n---------------------------------------------------------");
+		System.out.println("THE UNIFIED CONTRIBUTION MINERS METRICS WERE CALCULATED!");
+		System.out.println("=========================================================\n");
 	}
 }

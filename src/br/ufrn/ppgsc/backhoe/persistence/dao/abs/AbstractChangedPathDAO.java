@@ -6,6 +6,6 @@ import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
 
 public interface AbstractChangedPathDAO extends AbstractDAO<ChangedPath, Long> {
 	
-	List<ChangedPath> getChangedPathByCommitRevision(Long revision);
+	List<ChangedPath> getChangedPathByCommitRevision(String revision);
 
 }

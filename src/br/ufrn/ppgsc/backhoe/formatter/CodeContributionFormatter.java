@@ -33,7 +33,7 @@ public class CodeContributionFormatter extends AbstractFormatter {
 	}
 	
 	public String generateContentFileCSV(Date startDateInterval, Date endDateInterval, List<String> developers){
-		String sql = "select d.codeRepositoryUsername, mt.slug, sum(m.value) as sumValue " +
+		String sql = "select d.codeRepositoryUsername, d.email, mt.slug, sum(m.value) as sumValue " +
 					 "from Developer d, Commit c, ChangedPath cp, Metric m, MetricType mt "+
 					 "where m.objectType = 'ChangedPath' " +
 					 " and m.minerSlug = 'codeContributionMiner' " +
@@ -44,8 +44,10 @@ public class CodeContributionFormatter extends AbstractFormatter {
 					 " and c.revision in (select distinct revision from Commit " + 
 								   		 "where author_id in (select id from Developer "+
 													   		 "where codeRepositoryUsername in "+ sqlListFormatter(developers) +") " +
+										    "or author_id in (select id from Developer "+
+									   		 				 "where email in "+ sqlListFormatter(developers) +") " +
 										 "and createdAt between ':startDateInterval' and ':endDateInterval') " +
-					"group by d.codeRepositoryUsername, mt.name";
+					"group by d.codeRepositoryUsername, d.email, mt.slug";
 		sql = sql.replace(":startDateInterval", startDateInterval.toString());
 		sql = sql.replace(":endDateInterval", endDateInterval.toString());
 		try {
@@ -74,9 +76,17 @@ public class CodeContributionFormatter extends AbstractFormatter {
 			metricToArrayPosition.put("methods:changed", 4);
 			
 			while (rs.next()){
-				ArrayList<Integer> developerContribution = (ArrayList<Integer>) contributions.get(rs.getString("codeRepositoryUsername"));
+				
+				String rowName = null;
+				if(rs.getString("codeRepositoryUsername")!= null && contributions.containsKey(rs.getString("codeRepositoryUsername"))){
+					rowName = "codeRepositoryUsername";
+				}else if(rs.getString("email")!= null && contributions.containsKey(rs.getString("email"))){
+					rowName = "email";
+				}
+				
+				ArrayList<Integer> developerContribution = (ArrayList<Integer>) contributions.get(rs.getString(rowName));
 				developerContribution.set(metricToArrayPosition.get(rs.getString("slug")), rs.getInt("sumValue"));
-				contributions.put(rs.getString("codeRepositoryUsername"), developerContribution);
+				contributions.put(rs.getString(rowName), developerContribution);
 				
 				totalContributions.set(metricToArrayPosition.get(rs.getString("slug")), totalContributions.get(metricToArrayPosition.get(rs.getString("slug"))) + 
 																	  rs.getInt("sumValue"));

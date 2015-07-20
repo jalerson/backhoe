@@ -1,6 +1,7 @@
 package br.ufrn.ppgsc.backhoe.repository.code;
 
-import java.util.Date;
+
+import java.sql.Date;
 import java.util.List;
 
 import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
@@ -14,11 +15,15 @@ public interface CodeRepository extends Repository {
 	
 	List<Commit> findCommitsByTimeRangeAndDevelopers(Date startDate, Date endDate, List<String> developers, boolean collectChangedPaths, List<String> ignoredPaths);
 	List<Commit> findCommitsByTimeRange(Date startDate, Date endDate, boolean collectChangedPaths, List<String> ignoredPaths);
-	String getFileContent(String path, Long revision);
-	List<Long> getFileRevisions(String path, Long startRevision, Long endRevision);
+	Commit findCommitByRevision(String revision,  boolean collectChangedPaths, List<String> ignoredPaths);
+	
+	String getFileContent(String path, String revision);
+	List<String> getFileRevisions(String path, String startRevision, String endRevision);
 	List<ChangedPath> getChangedPathsFromLogTarefas(List<TaskLog> logs);
+	
 	List<Diff> buildDiffs(List<ChangedPath> changedPaths);
 	List<Blame> buildBlames(List<Diff> diffs);
+	
 	List<Commit> findCommitsFromLog(TaskLog log, boolean collectChangedPaths, List<String> ignoredPaths);
 	List<Commit> findCommitsFromLogs(List<TaskLog> logs, boolean collectChangedPaths, List<String> ignoredPaths);
 	

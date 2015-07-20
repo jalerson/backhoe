@@ -4,6 +4,8 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Developer;
 
 public interface AbstractDeveloperDAO extends AbstractDAO<Developer, Long> {
 	
-	public Developer findByCodeRepositoryUsername(String username);
+	Developer findByCodeRepositoryUsername(String username);
+	Developer findByEmail(String email);
+	Developer findByCodeRepositoryUsernameOrEmail(String usernameOrEmail);
 	
 }

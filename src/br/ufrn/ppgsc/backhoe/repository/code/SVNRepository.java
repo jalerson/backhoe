@@ -5,15 +5,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,7 +35,6 @@ import org.tmatesoft.svn.core.wc2.SvnRevisionRange;
 import org.tmatesoft.svn.core.wc2.SvnTarget;
 
 import br.ufrn.ppgsc.backhoe.exceptions.DAONotFoundException;
-import br.ufrn.ppgsc.backhoe.exceptions.MissingParameterException;
 import br.ufrn.ppgsc.backhoe.exceptions.NonUniqueCommitByRevisionException;
 import br.ufrn.ppgsc.backhoe.persistence.dao.DAOFactory;
 import br.ufrn.ppgsc.backhoe.persistence.dao.DAOType;
@@ -53,9 +48,8 @@ import br.ufrn.ppgsc.backhoe.persistence.model.helper.Blame;
 import br.ufrn.ppgsc.backhoe.persistence.model.helper.BlameHandler;
 import br.ufrn.ppgsc.backhoe.persistence.model.helper.Diff;
 import br.ufrn.ppgsc.backhoe.persistence.model.helper.DiffChild;
-import br.ufrn.ppgsc.backhoe.repository.AbstractRepository;
 
-public class SVNRepository extends AbstractRepository implements CodeRepository {
+public class SVNRepository extends AbstractCodeRepository implements CodeRepository {
 	
 	private org.tmatesoft.svn.core.io.SVNRepository repository;
 	private SVNClientManager svnClientManager;
@@ -75,18 +69,9 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 	public SVNRepository() {
 		this(null, null, null);
 	}
-
-	public boolean connect() throws MissingParameterException {
-		if(url == null) {
-			throw new MissingParameterException("Missing mandatory parameter: String url");
-		}
-		if(username == null) {
-			throw new MissingParameterException("Missing mandatory parameter: String username");
-		}
-		if(password == null) {
-			throw new MissingParameterException("Missing mandatory parameter: String password");
-		}
-		
+	
+	@Override
+	protected boolean specificConnect() {
 		DAVRepositoryFactory.setup();
 		try {
 			repository = SVNRepositoryFactory.create(SVNURL.parseURIEncoded(url));
@@ -116,7 +101,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 		svnOperationFactory.setAuthenticationManager(repository.getAuthenticationManager());
 
 		try {
-			System.out.print("Finding commits in the date interval: "+startDate.toString()+" - "+endDate.toString()+" ... ");
+			System.out.print(">> BACKHOE is loking for commits in the informed date interval! "+startDate.toString()+" - "+endDate.toString()+" ... ");
 			
 			SvnLog log = svnOperationFactory.createLog();
 			log.addTarget(SvnTarget.fromURL(SVNURL.parseURIEncoded(url)));
@@ -126,13 +111,13 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 			ArrayList<SVNLogEntry> svnLogEntries = new ArrayList<SVNLogEntry>();
 			log.run(svnLogEntries);
 			
-			System.out.println("Finished!\n"+svnLogEntries.size()+" commits found!");
+			System.out.println("Done!\n>>> "+svnLogEntries.size()+" commits were founded!");
 			
 			for (SVNLogEntry svnLogEntry : svnLogEntries){
 				if(developers == null || developers != null && developers.contains(svnLogEntry.getAuthor())){
 					boolean betweenSearchRange = svnLogEntry.getDate().after(startDate) && svnLogEntry.getDate().before(endDate);
 					if(betweenSearchRange){
-						Commit commit = commitDao.findByRevision(svnLogEntry.getRevision());
+						Commit commit = commitDao.findByRevision(new Long(svnLogEntry.getRevision()).toString());
 						
 						if(commit == null){
 							commit = createCommit(svnLogEntry, collectChangedPaths, ignoredPaths);
@@ -146,7 +131,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 				}
 			}
 			if(developers != null)
-				System.out.println(commits.size()+" of "+svnLogEntries.size()+" belong to informed developers");
+				System.out.println(">>> "+commits.size()+" of "+svnLogEntries.size()+" belongs to informed developers");
 			return commits;
 		} catch (SVNException e) {
 			e.printStackTrace();
@@ -154,7 +139,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 		return null;
 	}
 	
-	public List<ChangedPath> findChangedPathsBySVNLogEntry(SVNLogEntry svnLogEntry, Commit associatedCommit, List<String> ignoredPaths){
+	private List<ChangedPath> findChangedPathsBySVNLogEntry(SVNLogEntry svnLogEntry, Commit associatedCommit, List<String> ignoredPaths){
 		Collection<SVNLogEntryPath> svnLogEntryPaths = svnLogEntry.getChangedPaths().values();
 		ArrayList<ChangedPath> changedPaths = new ArrayList<ChangedPath>();
 		for (SVNLogEntryPath svnLogEntryPath : svnLogEntryPaths) {
@@ -179,7 +164,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 	}
 	
 	private Commit createCommit(SVNLogEntry svnLogEntry, boolean collectChangedPaths, List<String> ignoredPaths){
-		Commit commit = new Commit();
+		Commit commit = new Commit(Commit.RepositoryType.SVN);
 		Developer developer = developerDao.findByCodeRepositoryUsername(svnLogEntry.getAuthor());
 		if(developer == null) {
 			developer = new Developer();
@@ -189,7 +174,7 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 		commit.setAuthor(developer);
 		commit.setComment(svnLogEntry.getMessage());
 		commit.setCreatedAt(svnLogEntry.getDate());
-		commit.setRevision(svnLogEntry.getRevision());
+		commit.setRevision(new Long(svnLogEntry.getRevision()).toString());
 		if(collectChangedPaths){
 			List<ChangedPath> changedPaths = findChangedPathsBySVNLogEntry(svnLogEntry, commit, ignoredPaths);
 			commit.setChangedPaths(changedPaths);
@@ -197,73 +182,16 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 		return commit;
 	}
 	
-	public List<Commit> findCommitsFromLogs(List<TaskLog> logs, boolean collectChangedPaths, List<String> ignoredPaths){
-		Map<Long, Commit> commitsMAP = new HashMap<Long, Commit>();
-		if(!logs.isEmpty()){
-			int count = 1;
-			for(TaskLog log: logs){
-				System.out.print("Processing log "+count+++"/"+logs.size()+"...");
-				List<Commit> commits = this.findCommitsFromLog(log, collectChangedPaths, ignoredPaths);
-				for(Commit commit: commits){
-					if(!commitsMAP.containsKey(commit.getRevision()))
-						commitsMAP.put(commit.getRevision(), commit);
-				}
-				System.out.println("Done!");
-			}
-		}
-		return new ArrayList<Commit>(commitsMAP.values());
-	}
-	
-	public List<Commit> findCommitsFromLog(TaskLog log, boolean collectChangedPaths, List<String> ignoredPaths){
-		Set<Long> revisions = new HashSet<Long>();
-		
-		List<Commit> commits = new ArrayList<Commit>();
-		
-		if(log.getRevisions() != null && !log.getRevisions().isEmpty()){
-			String[] revisionsIDs = log.getRevisions().replaceAll(" ", "").split(",");
-			for(int i = 0; i < revisionsIDs.length; i++){
-				try{
-					revisions.add(Long.parseLong(revisionsIDs[i]));
-				}catch(NumberFormatException e){
-					e.printStackTrace();
-				}
-			}
-			
-			Pattern pattern = Pattern.compile("(Revisão|revisão|Revisao|revisao|#)"
-					+ "(:| |) "
-					+ "(\\d+)");
-			
-			if(log.getDescription() != null && !log.getDescription().isEmpty()){
-				Matcher matcher = pattern.matcher(log.getDescription());
-				if (matcher.find()){
-					revisions.add(Long.parseLong(matcher.group(3)));
-				}
-			}
-
-			for(Long revision: revisions){
-				Commit commit = commitDao.findByRevision(revision); // find in local bd
-				if(commit == null){
-					commit = findCommitByRevision(revision, collectChangedPaths, ignoredPaths); // find in svn repository
-				}else{
-					commit.setTask(log.getTask());
-					commitDao.update(commit);
-					commits.add(commit);
-				}
-			}
-
-		}		
-		return commits;
-	}
-	
-	public Commit findCommitByRevision(Long revision,  boolean collectChangedPaths, List<String> ignoredPaths){
+	public Commit findCommitByRevision(String revision,  boolean collectChangedPaths, List<String> ignoredPaths){
 		Commit commit = commitDao.findByRevision(revision);
+		Long svnRevision = new Long(revision);
 		if(commit == null){
 			try {
 				SvnOperationFactory svnOperationFactory = new SvnOperationFactory();
 				svnOperationFactory.setAuthenticationManager(repository.getAuthenticationManager());
 				SvnLog log = svnOperationFactory.createLog();
 				log.addTarget(SvnTarget.fromURL(SVNURL.parseURIEncoded(url)));
-				log.addRange(SvnRevisionRange.create(SVNRevision.create(revision), SVNRevision.create(revision)));
+				log.addRange(SvnRevisionRange.create(SVNRevision.create(svnRevision), SVNRevision.create(svnRevision)));
 				log.setDiscoverChangedPaths(true);
 				log.setDepth(SVNDepth.INFINITY);
 				ArrayList<SVNLogEntry> svnLogEntries = new ArrayList<SVNLogEntry>();
@@ -277,11 +205,6 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 						
 					commit = createCommit(svnLogEntry, collectChangedPaths, ignoredPaths);
 					commitDao.save(commit);
-					
-//					else if(commit != null && commit.getChangedPaths() != null && commit.getChangedPaths().isEmpty() && collectChangedPaths){
-//						commit.setChangedPaths(findChangedPathsBySVNLogEntry(svnLogEntry, commit, ignoredPaths));
-//						commitDao.update(commit);
-//					}
 				}
 			} catch (SVNException e) {
 				e.printStackTrace();
@@ -291,164 +214,49 @@ public class SVNRepository extends AbstractRepository implements CodeRepository 
 	}
 
 	@Override
-	public String getFileContent(String path, Long revision) {
+	public String getFileContent(String path, String revision) {
+		Long svnRevision = new Long(revision);
 		try {
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			repository.getFile(path, revision, new SVNProperties(), output);
+			repository.getFile(path, svnRevision, new SVNProperties(), output);
 			return new String(output.toByteArray());
 		} catch (SVNException e) {
-//			e.printStackTrace();
 		}
 		return null;
 	}
 	
 	@Override
-	public List<Long> getFileRevisions(String path, Long startRevision, Long endRevision) {
+	public List<String> getFileRevisions(String path, String startRevision, String endRevision) {
 		ArrayList<SVNFileRevision> svnFileRevisions = new ArrayList<SVNFileRevision>();
-		ArrayList<Long> revisions = new ArrayList<Long>();
+		ArrayList<String> revisions = new ArrayList<String>();
+		
+		if(startRevision == null)
+			startRevision = "1";
 		try {
-			System.out.println("Archive: "+path);
-			System.out.print("Searching revisions (Rev: "+endRevision+")... ");
-			repository.getFileRevisions(path, svnFileRevisions, startRevision, endRevision);
+			repository.getFileRevisions(path, svnFileRevisions, new Long(startRevision), new Long(endRevision));
 			for (SVNFileRevision svnFileRevision : svnFileRevisions) {
-				revisions.add(svnFileRevision.getRevision());
+				revisions.add(new Long(svnFileRevision.getRevision()).toString());
 			}
 		} catch (SVNException e) {
 			e.printStackTrace();
 		}
-		System.out.println(revisions.size()+" founded revisions!");
 		return revisions;
 	}
 	
-	public List<ChangedPath> getChangedPathsFromLogTarefas(List<TaskLog> logs) {
-		
-		String re1 = "([AUD])"; // Single Character 1
-		String re2 = "(\\s+)"; // White Space 1
-		String re3 = "(trunk)"; // Word 1
-		String re4 = "((?:\\/[\\w\\.\\-]+)+)"; // Unix Path 1
-
-		String re5 = "(\\s)";
-		String re6 = "(\\d+)";
-		String re7 = "(:)";
-		String re8 = "(branches)";
-		String re9 = "(trunk2)";
-
-		// ([AUD])(\s+)(trunk)((?:\/[\w\.\-]+)+)
-		Pattern p1 = Pattern.compile(re1 + re2 + re3 + re4,
-				Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-		// (\\s)(\\d+)(\\s)
-		Pattern p2 = Pattern.compile(re5 + re6 + re5, Pattern.CASE_INSENSITIVE
-				| Pattern.DOTALL);
-		// (:)(\\d+)(\\s)
-		Pattern p3 = Pattern.compile(re7 + re6 + re5);
-		// ([AUD])(\s+)(branches)((?:\/[\w\.\-]+)+)
-		Pattern p4 = Pattern.compile(re1 + re2 + re8 + re4,
-				Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-		// ([AUD])(\s+)(trunk2)((?:\/[\w\.\-]+)+)
-		Pattern p5 = Pattern.compile(re1 + re2 + re9 + re4,
-				Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-		// (\\s)(\\d+)
-		Pattern p6 = Pattern.compile(re5 + re6);
-		// (:)(\\d+)
-		Pattern p7 = Pattern.compile(re7 + re6);
-		
-		Pattern authorPattern = Pattern.compile("(por) ([a-zA-Z0-9]+)");
-		
-		List<ChangedPath> changes = new ArrayList<ChangedPath>();
-		
-		long revision = -1;
-		for (TaskLog log : logs) {
-			String[] logParts = log.getDescription().split("[Rr]evis[ãa]o");
-			// getting the revisions
-
-			for (int i = 1; i < logParts.length; i++) {
-				Matcher revMatcher = authorPattern.matcher(logParts[i]);
-				/*if(!revMatcher.find()) {
-					continue;
-				} else {
-					if(!svnLogins.contains(revMatcher.group(2))) {
-						continue;
-					}
-				}*/
-				if(revMatcher.find()) {
-					Developer developer = new Developer();
-					developer.setCodeRepositoryUsername(revMatcher.group(2));
-					log.setAuthor(developer);
-//					log.setUsuario(revMatcher.group(2));
-				}
-				
-				revMatcher = p2.matcher(logParts[i]);
-
-				// (begin) get the revision
-				if (revMatcher.find()) {
-					revision = Long.valueOf(revMatcher.group(2));
-				} else {
-					revMatcher = p3.matcher(logParts[i]);
-					if (revMatcher.find()) {
-						revision = Long.valueOf(revMatcher.group(2));
-					} else {
-						revMatcher = p6.matcher(logParts[i]);
-						if (revMatcher.find()) {
-							revision = Long.valueOf(revMatcher.group(2));
-						} else {
-							revMatcher = p7.matcher(logParts[i]);
-							if(revMatcher.find()) {
-								revision = Long.valueOf(revMatcher.group(2));
-							}
-						}
-					}
-				}
-				// (end)
-
-				// (begin) get the changed paths/files
-				
-				Commit commit = new Commit();
-				commit.setRevision(revision);
-				commit.setTask(log.getTask());
-				
-				List<Matcher> assetMatchers = new LinkedList<Matcher>();
-				assetMatchers.add(p1.matcher(logParts[i]));
-				assetMatchers.add(p4.matcher(logParts[i]));
-				assetMatchers.add(p5.matcher(logParts[i]));
-				
-				for(Matcher assetMatcher: assetMatchers){
-					List<ChangedPath> changedPaths = findJavaChangedPaths(assetMatcher, commit);
-					if(!changedPaths.isEmpty()){
-						changes.addAll(changedPaths);
-						break;
-					}
-				}
-				// (end)
-			}
-		}
-		return changes;
+	public List<ChangedPath> getChangedPathsFromLogTarefas(List<TaskLog> logs){
+		return this.getChangedPathsFromLogTarefas(logs, Commit.RepositoryType.SVN);
 	}
 	
-	private List<ChangedPath> findJavaChangedPaths(Matcher matcher, Commit commit) {
-		List<ChangedPath> changedPaths = new LinkedList<ChangedPath>();
-		while (matcher.find()) {
-			String c1 = matcher.group(1);
-			String trunk = "/" + matcher.group(3);
-			String path = matcher.group(4);
-			if (path.contains(".java")) {
-				ChangedPath changedPath = new ChangedPath(trunk+path, c1.charAt(0), commit, null);
-				changedPaths.add(changedPath);
-			} else {
-				continue;
-			}
-		}
-		return changedPaths;
-	}
-	
+		
 	public List<Diff> buildDiffs(List<ChangedPath> changedPaths) {
 		ArrayList<Diff> diffs = new ArrayList<Diff>();
 
 		for (ChangedPath changedPath : changedPaths) {
-			SVNRevision fixingRevision = SVNRevision.create(changedPath.getCommit().getRevision());
+			SVNRevision fixingRevision = SVNRevision.create(new Long(changedPath.getCommit().getRevision()));
 			List<SVNFileRevision> fileRevisions = new ArrayList<SVNFileRevision>();
 
 			try {
-				repository.getFileRevisions(changedPath.getPath(), fileRevisions, 1, changedPath.getCommit().getRevision());
+				repository.getFileRevisions(changedPath.getPath(), fileRevisions, 1, new Long(changedPath.getCommit().getRevision()));
 				SVNRevision previousRevision = getPreviousVersion(fileRevisions);
 				SVNRevision startRevision = getStartVersion(fileRevisions);
 				

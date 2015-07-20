@@ -26,11 +26,9 @@ public class UnifiedContributionFormatter extends AbstractFormatter {
 
 	@Override
 	public File format() {
-		System.out.println("\nFormating file with UnifiedContributionMetrics...");
 		String contentFile = generateContentFileCSV(startDate, endDate, developers);
 		String fileName = systemName+"_"+getHumanizedStartDate()+"_"+getHumanizedEndDate()+"_UnifiedContributionMetrics.csv";
 		String filePathAndName = getDirPath()+ "/" + fileName;
-		System.out.println("UnifiedContributionMetrics formated!\n");
 		return createCSV(contentFile, filePathAndName);
 	}
 	

@@ -15,4 +15,23 @@ public class HibernateDeveloperDAO extends HibernateGenericDAO<Developer, Long> 
 		query.setParameter("username", username);
 		return (Developer) query.uniqueResult();
 	}
+	
+	@Override
+	public Developer findByEmail(String email) {
+		getSession().clear();
+		getSession().flush();
+		Query query = getSession().createQuery("from Developer u where u.email = :email");
+		query.setParameter("email", email);
+		return (Developer) query.uniqueResult();
+	}
+
+	@Override
+	public Developer findByCodeRepositoryUsernameOrEmail(String usernameOrEmail) {
+		getSession().clear();
+		getSession().flush();
+		Query query = getSession().createQuery("from Developer u where u.email = :email or u.codeRepositoryUsername = :username ");
+		query.setParameter("email", usernameOrEmail);
+		query.setParameter("username", usernameOrEmail);
+		return (Developer) query.uniqueResult();
+	}
 }

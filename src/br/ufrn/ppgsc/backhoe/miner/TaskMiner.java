@@ -1,6 +1,6 @@
 package br.ufrn.ppgsc.backhoe.miner;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -10,6 +10,7 @@ import br.ufrn.ppgsc.backhoe.persistence.model.Task;
 import br.ufrn.ppgsc.backhoe.persistence.model.TaskLog;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
+import br.ufrn.ppgsc.backhoe.vo.ConfigurationMining;
 
 public class TaskMiner extends AbstractMiner {
 
@@ -24,24 +25,44 @@ public class TaskMiner extends AbstractMiner {
 	@Override
 	public boolean setupMinerSpecific() throws MissingParameterException {
 		// TODO Auto-generated method stub
+		
+		System.out.println("\n=========================================================");
+		System.out.println("TASK MINER: "+ConfigurationMining.getSystemName(system).toUpperCase()+ " TEAM");
+		System.out.println("---------------------------------------------------------");
+	
+		System.out.print("\n>> BACKHOE is connecting to CODE and TASK REPOSITORIES ... ");
+		boolean connected = taskRepository.connect() && codeRepository.connect();
+		if(connected)
+			System.out.println("Done!");
+		else
+			System.out.println("Failed!");
+		
 		return taskRepository.connect() && codeRepository.connect();
 	}
-
+	
 	@Override
 	public void execute() {
 		// TODO Auto-generated method stub
-		System.out.println("\nCalculating Metrics for Task Miner..."+startDate.toString()+ " | " + endDate.toString());
+		
+		System.out.println("\n---------------------------------------------------------");
+		System.out.println("BACKHOE - CALCULATE TASK METRICS");
+		System.out.println("---------------------------------------------------------\n");
+		
+		System.out.println(">> Date Interval for mining: "+startDate.toString()+" - "+endDate.toString());
+		
+		System.out.print("\n>> BACKHOE is looking for TASKS in Iproject ... ");
+		
 		long[] systems = {system};
-		System.out.print("Researching Tasks in iproject... ");
 		List<Task> tasks = taskRepository.findTasks(startDate, endDate, null, null, systems);
+		
 		if(tasks.isEmpty()){
-			System.out.println("\nNo tasks founded, finishing mineration!");
+			System.out.println("Done!\n\n>> No task founded. Backhoe is finishing TASK MINER!");
 		}else{
 			System.out.println(tasks.size()+ " Done!");
-			System.out.print("Researching TasksLog from Tasks... ");
+			System.out.print(">> Looking logs from the founded tasks ... ");
 			List<TaskLog> logs = taskRepository.findTaskLogsFromTasks(tasks, null, developers);
 			System.out.println(logs.size()+" Done!");
-			System.out.print("Fiding commits from TasksLogs... ");
+			System.out.print(">> Looking commits from logs ... ");
 			List<Commit> commits = codeRepository.findCommitsFromLogs(logs, true, ignoredPaths);
 			System.out.println(commits.size()+" Done!");
 	
@@ -62,8 +83,9 @@ public class TaskMiner extends AbstractMiner {
 			}
 		}
 		
-		System.out.println("Task Miner execut end!\n");
-
+		System.out.println("\n---------------------------------------------------------");
+		System.out.println("THE TASK METRICS WERE CALCULATED!");
+		System.out.println("=========================================================\n");
 	}
 
 }

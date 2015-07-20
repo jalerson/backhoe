@@ -33,7 +33,7 @@ public class CodeComplexityFormatter extends AbstractFormatter {
 	}
 	
 	public String generateContentFileCSV(Date startDateInterval, Date endDateInterval, List<String> developers){
-		String sql = "select d.codeRepositoryUsername, mt.slug, sum(m.value) as sumValue " +
+		String sql = "select d.codeRepositoryUsername, d.email, mt.slug, sum(m.value) as sumValue " +
 					 "from Developer d, Commit c, ChangedPath cp, Metric m, MetricType mt "+
 					 "where m.objectType = 'ChangedPath' " +
 					 " and m.minerSlug = 'codeComplexityMiner' " +
@@ -44,8 +44,10 @@ public class CodeComplexityFormatter extends AbstractFormatter {
 					 " and c.revision in (select distinct revision from Commit " + 
 								   		 "where author_id in (select id from Developer "+
 													   		 "where codeRepositoryUsername in "+ sqlListFormatter(developers) +") " +
+											"or author_id in (select id from Developer "+
+								   		 					 "where email in "+ sqlListFormatter(developers) +") " +
 										 "and createdAt between ':startDateInterval' and ':endDateInterval') " +
-					"group by d.codeRepositoryUsername, mt.name";
+					"group by d.codeRepositoryUsername, d.email, mt.slug";
 		sql = sql.replace(":startDateInterval", startDateInterval.toString());
 		sql = sql.replace(":endDateInterval", endDateInterval.toString());
 		try {
@@ -62,7 +64,7 @@ public class CodeComplexityFormatter extends AbstractFormatter {
 			symbols.setDecimalSeparator(',');
 			decimalFormat.setDecimalFormatSymbols(symbols);
 			
-			for (String developer : developers) {
+			for (String developer : developers){
 				codeComplexityMAP.put(developer, new ArrayList<Integer>(Arrays.asList(new Integer[]{0,0})));
 			}
 			
@@ -71,9 +73,19 @@ public class CodeComplexityFormatter extends AbstractFormatter {
 			metricToArrayPosition.put("complexity:changed", 1);
 			
 			while (rs.next()){
-				ArrayList<Integer> complexityContribution = (ArrayList<Integer>) codeComplexityMAP.get(rs.getString("codeRepositoryUsername"));
+				ArrayList<Integer> complexityContribution = null;
+				
+				String rowName = null;
+				if(rs.getString("codeRepositoryUsername")!= null && codeComplexityMAP.containsKey(rs.getString("codeRepositoryUsername"))){
+					rowName = "codeRepositoryUsername";
+				}else if(rs.getString("email")!= null && codeComplexityMAP.containsKey(rs.getString("email"))){
+					rowName = "email";
+				}
+				
+				complexityContribution  = (ArrayList<Integer>) codeComplexityMAP.get(rs.getString(rowName));
+				
 				complexityContribution.set(metricToArrayPosition.get(rs.getString("slug")), rs.getInt("sumValue"));
-				codeComplexityMAP.put(rs.getString("codeRepositoryUsername"), complexityContribution);
+				codeComplexityMAP.put(rs.getString(rowName), complexityContribution);
 				
 				totalComplexityContributions.set(metricToArrayPosition.get(rs.getString("slug")), totalComplexityContributions.get(metricToArrayPosition.get(rs.getString("slug"))) + 
 																	  rs.getInt("sumValue"));

@@ -1,7 +1,7 @@
 package br.ufrn.ppgsc.backhoe.miner;
 
+import java.sql.Date;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import br.ufrn.ppgsc.backhoe.exceptions.MissingParameterException;
@@ -12,6 +12,7 @@ import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
 import br.ufrn.ppgsc.backhoe.util.CodeRepositoryUtil;
+import br.ufrn.ppgsc.backhoe.vo.ConfigurationMining;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.ClassWrapper;
 import br.ufrn.ppgsc.backhoe.vo.wrapper.MethodWrapper;
 
@@ -33,6 +34,10 @@ public class CodeComplexityMiner extends AbstractMiner {
 
 	@Override
 	public boolean setupMinerSpecific() throws MissingParameterException {
+		
+		System.out.println("\n=========================================================");
+		System.out.println("CODE COMPLEXITY MINER: "+ConfigurationMining.getSystemName(system).toUpperCase()+ " TEAM");
+		System.out.println("---------------------------------------------------------");
 
 		this.addedComplexityPerChangedPathMetricType = metricTypeDao
 				.findBySlug("complexity:added");
@@ -54,6 +59,10 @@ public class CodeComplexityMiner extends AbstractMiner {
 
 	@Override
 	public void execute() {
+		
+		System.out.println("\n---------------------------------------------------------");
+		System.out.println("BACKHOE - CALCULATE CODE COMPLEXITY METRICS");
+		System.out.println("---------------------------------------------------------");
 
 		List<Commit> commits = null;
 	
@@ -67,18 +76,23 @@ public class CodeComplexityMiner extends AbstractMiner {
 			}
 		}
 		calculateCodeComplexity(commits);
-		
-//		taskRepository.connect();
-//		((IProjectRepository) taskRepository).associateTaskToCommitFromIProject(commits, developers);
 	}
 
 	private void calculateCodeComplexity(List<Commit> commits) {
 		
-		System.out.println("\nCalculating code complexity metrics...");
-		
 		int processedCommits = 0;
+		
+		if(!commits.isEmpty())
+			System.out.println("\n>> BACKHOE IS CALCULATING METRICS TO FOUNDED COMMITS ... ");
+		else
+			System.out.println("\n>> NO COMMIT WAS FOUNDED!");
 
 		for (Commit commit : commits) {
+			
+			System.out.println("\n---------------------------------------------------------");
+			System.out.println("REVISION #"+((commit.getRevision().length() <= 7)? commit.getRevision(): commit.getRevision().subSequence(0, 7))+
+					" - [" + ++processedCommits + "]/[" + commits.size() + "]");
+			
 			List<ChangedPath> changedPaths = changedPathDao.getChangedPathByCommitRevision(commit.getRevision());
 			for (ChangedPath changedPath : changedPaths) {
 				if (changedPath.getChangeType().equals('D')) {
@@ -92,14 +106,25 @@ public class CodeComplexityMiner extends AbstractMiner {
 				if(metricDao.existsMetric(changedPath.getId(), this.minerSlug))
 					continue;
 				
+				System.out.println(">>> Path: "+changedPath.getPath());
+				
 				String currentContent = changedPath.getContent();
 				
-				List<Long> fileRevisions = codeRepository.getFileRevisions(
-						changedPath.getPath(), 1L, changedPath.getCommit()
-								.getRevision());
-
-				if (fileRevisions.size() > 1) {
-					Long previousRevision = CodeRepositoryUtil.
+				if(changedPath.getChangeType().equals('A')){ 
+					
+					this.calculateComplexityMetricInThisRevision(changedPath,
+							currentContent);
+				}else{
+					
+					System.out.print(">>> It's looking for path revisions ... ");
+					
+					List<String> fileRevisions = codeRepository.getFileRevisions(
+							changedPath.getPath(), null, changedPath.getCommit()
+									.getRevision());
+					
+					System.out.println("Done! "+fileRevisions.size()+" revisions were founded!");
+					
+					String previousRevision = CodeRepositoryUtil.
 							getPreviousRevision(changedPath.getCommit().getRevision(), fileRevisions);
 					String previousContent = codeRepository.getFileContent(changedPath.getPath(), previousRevision);
 					
@@ -109,22 +134,19 @@ public class CodeComplexityMiner extends AbstractMiner {
 					this.calculateComplexityMetricBetweenRevisions(changedPath,
 							previousContent, currentContent);
 
-				} else {
-					this.calculateComplexityMetricInThisRevision(changedPath,
-							currentContent);
 				}
 			}
-			System.out.println("[" + ++processedCommits + "] of [" + commits.size() + "] processed commits.");
+			System.out.println("---------------------------------------------------------");
 		}
 		
-		System.out.println("Code Complexity Miner execut end!\n");
+		System.out.println("\n---------------------------------------------------------");
+		System.out.println("THE CODE COMPLEXITY METRICS WERE CALCULATED!");
+		System.out.println("=========================================================\n");
 	}
 
 	private void calculateComplexityMetricInThisRevision(
 			ChangedPath changedPath, String currentContent) {
-
-		System.out.print("Calculating metrics (Curr. Rev: "
-				+ changedPath.getCommit().getRevision() + ")... ");
+		
 		try {
 
 			ClassWrapper classWrapper = new ClassWrapper(currentContent);
@@ -202,6 +224,7 @@ public class CodeComplexityMiner extends AbstractMiner {
 			complexityAddedPerchangedPath += addedComplexity;
 			complexityChangedPerChangedPath += changedComplexity;
 		}
+		
 		Metric addedComplexityMetricPerMethod = new Metric();
 		addedComplexityMetricPerMethod.setObjectId(changedPath.getId());
 		addedComplexityMetricPerMethod.setObjectType("ChangedPath");
@@ -209,7 +232,7 @@ public class CodeComplexityMiner extends AbstractMiner {
 		addedComplexityMetricPerMethod.setType(addedComplexityPerChangedPathMetricType);
 		addedComplexityMetricPerMethod.setMinerSlug(this.minerSlug);
 		metricDao.save(addedComplexityMetricPerMethod);
-		
+
 		Metric changedComplexityMetricPerMethod = new Metric();
 		changedComplexityMetricPerMethod.setObjectId(changedPath.getId());
 		changedComplexityMetricPerMethod.setObjectType("ChangedPath");

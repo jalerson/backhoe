@@ -16,4 +16,8 @@ public interface GitHandle {
 	
 	GITLogEntry getCommitInformations(String revision) throws GitAPIException;
 	
+	void cloneRepository()throws GitAPIException;
+	
+	boolean wasClonedRepository();
+	
 }

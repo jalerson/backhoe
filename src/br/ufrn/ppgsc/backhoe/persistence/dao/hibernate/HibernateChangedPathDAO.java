@@ -9,7 +9,7 @@ import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
 
 public class HibernateChangedPathDAO extends HibernateGenericDAO<ChangedPath, Long> implements AbstractChangedPathDAO {
 	
-	public List<ChangedPath> getChangedPathByCommitRevision(Long revision){
+	public List<ChangedPath> getChangedPathByCommitRevision(String revision){
 		String sql = "from ChangedPath " +
 					 "where commit_id = :revision";
 		getSession().clear();

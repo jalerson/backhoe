@@ -12,12 +12,24 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
-
 @Entity
-public class Commit implements Model {
+public class Commit{
+	
+	public enum RepositoryType{
+		
+		GIT(1), SVN(2);
+		
+		private final int type;
+		
+		RepositoryType(int type) { this.type = type; }
+	    public int getValue() { return type; }
+	}
 	
 	@Id
-	private Long revision;
+	private String revision;
+	
+	private int repositoryType;
+	
 	@Lob
 	private String comment;
 	private Date createdAt;
@@ -32,16 +44,21 @@ public class Commit implements Model {
 	private List<ChangedPath> changedPaths;
 	
 	public Commit(){
+		this(Commit.RepositoryType.GIT);
+	}
+	
+	public Commit(RepositoryType repositoryType){
+		this.repositoryType = repositoryType.getValue();
 		this.changedPaths = new LinkedList<ChangedPath>();
 	}
 	
-	public Commit(Long revision, String comment, Date createdAt, String branch,
-			Developer author, Task task) {
-		this(revision, comment, createdAt, branch, author, task, new LinkedList<ChangedPath>());
+	public Commit(String revision, String comment, Date createdAt, String branch,
+			Developer author, Task task, RepositoryType repositoryType) {
+		this(revision, comment, createdAt, branch, author, task, new LinkedList<ChangedPath>(), repositoryType);
 	}
 
-	public Commit(Long revision, String comment, Date createdAt, String branch,
-			Developer author, Task task, List<ChangedPath> changedPaths) {
+	public Commit(String revision, String comment, Date createdAt, String branch,
+			Developer author, Task task, List<ChangedPath> changedPaths, RepositoryType repositoryType) {
 		super();
 		this.revision = revision;
 		this.comment = comment;
@@ -50,6 +67,7 @@ public class Commit implements Model {
 		this.author = author;
 		this.task = task;
 		this.changedPaths = changedPaths;
+		this.repositoryType = repositoryType.getValue();
 	}
 	
 	public List<ChangedPath> getChangedPaths() {
@@ -71,10 +89,10 @@ public class Commit implements Model {
 	public void setCreatedAt(Date createdAt) {
 		this.createdAt = createdAt;
 	}
-	public Long getRevision() {
+	public String getRevision() {
 		return revision;
 	}
-	public void setRevision(Long revision) {
+	public void setRevision(String revision) {
 		this.revision = revision;
 	}
 	public String getBranch() {
@@ -95,18 +113,17 @@ public class Commit implements Model {
 	public void setTask(Task task) {
 		this.task = task;
 	}
-	@Override
-	public String toString() {
-		return "Commit [revision=" + revision + ", author=" + author
-				+ ", task=" + task + "]";
+	public int getRepositoryType() {
+		return repositoryType;
 	}
-	@Override
-	public Long getId() {
-		return this.revision;
+	public void setRepositoryType(int repositoryType) {
+		this.repositoryType = repositoryType;
 	}
 
 	@Override
-	public void setId(Long id) {
-		this.revision = id;
+	public String toString() {
+		return "Commit [revision=" + revision + ", repositoryType="
+				+ repositoryType + ", author=" + author + ", task=" + task
+				+ "]";
 	}
 }

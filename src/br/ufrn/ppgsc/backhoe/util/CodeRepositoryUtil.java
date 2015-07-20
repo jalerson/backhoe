@@ -6,7 +6,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CodeRepositoryUtil {
-	public static Long getPreviousRevision(Long currentRevision, List<Long> fileRevisions) {
+	
+	public static String getPreviousRevision(String currentRevision, List<String> fileRevisions) {
 		int index = fileRevisions.indexOf(currentRevision);
 		return fileRevisions.get(index - 1);
 	}

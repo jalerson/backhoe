@@ -1,6 +1,7 @@
 package br.ufrn.ppgsc.backhoe.miner;
 
-import java.util.Date;
+
+import java.sql.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ import br.ufrn.ppgsc.backhoe.persistence.model.MetricType;
 import br.ufrn.ppgsc.backhoe.persistence.model.TaskLog;
 import br.ufrn.ppgsc.backhoe.repository.code.CodeRepository;
 import br.ufrn.ppgsc.backhoe.repository.task.TaskRepository;
+import br.ufrn.ppgsc.backhoe.vo.ConfigurationMining;
 
 public class BugFixContributionMiner extends AbstractMiner {
 	
@@ -40,6 +42,10 @@ public class BugFixContributionMiner extends AbstractMiner {
 	@Override
 	public boolean setupMinerSpecific() throws MissingParameterException {
 		
+		System.out.println("\n=========================================================");
+		System.out.println("BUGFIX MINER: "+ConfigurationMining.getSystemName(system).toUpperCase()+ " TEAM");
+		System.out.println("---------------------------------------------------------");
+		
 		this.bugFixContributionPerDeveloperByPeriod = metricTypeDao
 				.findBySlug("bugs:fixed");
 		if (this.bugFixContributionPerDeveloperByPeriod == null) {
@@ -48,14 +54,26 @@ public class BugFixContributionMiner extends AbstractMiner {
 			metricTypeDao.save(this.bugFixContributionPerDeveloperByPeriod);
 		}
 		
-		return taskRepository.connect();
+		System.out.print("\n>> BACKHOE is connecting to Task Repository ... ");
+		boolean connected = taskRepository.connect();
+		if(connected)
+			System.out.println("Done!");
+		else
+			System.out.println("Failed!");
+		
+		return connected;
 	}
 
 	@Override
 	public void execute() {
 		
-		System.out.println("Calculating Bug Fix Contribution Metrics...");
-		System.out.print("Researching logs in iproject... \n");
+		System.out.println("\n---------------------------------------------------------");
+		System.out.println("BACKHOE - CALCULATE BUG FIX METRICS");
+		System.out.println("---------------------------------------------------------\n");
+		
+		System.out.println(">> Date Interval for mining: "+startDate.toString()+" - "+endDate.toString());
+		
+		System.out.print("\n>> BACKHOE is looking for logs in Iproject TASKS ... ");
 		
 		long[] systems = {system};
 //		List<Task> tasks = taskRepository.findBugFixTasks(startDate, endDate, systems);
@@ -63,45 +81,55 @@ public class BugFixContributionMiner extends AbstractMiner {
 		
 		List<TaskLog> logs = taskRepository.findBugFixTaskLogs(startDate, endDate, systems, developers);
 		
-		Hashtable<String, Integer> bugFixContributions = new Hashtable<String, Integer>();
 		
-		for (String login : developers) {
-			bugFixContributions.put(login, 0);
+		if(logs.isEmpty()) {
+			System.out.println("Done!\n\n>> No task log founded. Backhoe is finishing BUGFIX MINER!");
+		}else{
+		
+			Hashtable<String, Integer> bugFixContributions = new Hashtable<String, Integer>();
+			
+			for (String login : developers) {
+				bugFixContributions.put(login, 0);
+			}
+			
+			for (TaskLog log : logs) {
+				String developerLogin = log.getAuthor().getCodeRepositoryUsername();
+				if(bugFixContributions.containsKey(developerLogin)) 
+					bugFixContributions.put(developerLogin, bugFixContributions.get(developerLogin) + 1);
+			}
+			
+			 Set<String> keys = bugFixContributions.keySet();
+			 for (String developerLogin : keys){  
+	            if(developerLogin != null){
+	        		Developer developer = developerDao.findByCodeRepositoryUsername(developerLogin);
+	        		if(developer == null) {
+	        			developer = new Developer();
+	        			developer.setCodeRepositoryUsername(developerLogin);
+	        			developerDao.save(developer);
+	        		}
+	        		
+	        		if(metricDao.existsMetric(developer.getId(), this.minerSlug, 
+	        				new java.sql.Date(startDate.getTime()), new java.sql.Date(endDate.getTime())))
+						continue;
+	        		
+	            	Metric bugFixContributionPerDeveloper = new Metric();
+	            	bugFixContributionPerDeveloper.setObjectId(developer.getId());
+					bugFixContributionPerDeveloper.setObjectType("Developer");
+					bugFixContributionPerDeveloper.setValue(Float.parseFloat(bugFixContributions.get(developerLogin).toString()));
+					bugFixContributionPerDeveloper.setType(bugFixContributionPerDeveloperByPeriod);
+					bugFixContributionPerDeveloper.setStartDateInterval(new java.sql.Date(startDate.getTime()));
+					bugFixContributionPerDeveloper.setEndDateInterval(new java.sql.Date(endDate.getTime()));
+					bugFixContributionPerDeveloper.setMinerSlug(this.minerSlug);
+					this.metricDao.save(bugFixContributionPerDeveloper);
+	            }
+	        }  
+			
+			System.out.println("Done!");
+			System.out.println(">> "+logs.size()+" logs were founded!");
 		}
 		
-		for (TaskLog log : logs) {
-			String developerLogin = log.getAuthor().getCodeRepositoryUsername();
-			if(bugFixContributions.containsKey(developerLogin)) 
-				bugFixContributions.put(developerLogin, bugFixContributions.get(developerLogin) + 1);
-		}
-		
-		 Set<String> keys = bugFixContributions.keySet();
-		 for (String developerLogin : keys){  
-            if(developerLogin != null){
-        		Developer developer = developerDao.findByCodeRepositoryUsername(developerLogin);
-        		if(developer == null) {
-        			developer = new Developer();
-        			developer.setCodeRepositoryUsername(developerLogin);
-        			developerDao.save(developer);
-        		}
-        		
-        		if(metricDao.existsMetric(developer.getId(), this.minerSlug, 
-        				new java.sql.Date(startDate.getTime()), new java.sql.Date(endDate.getTime())))
-					continue;
-        		
-            	Metric bugFixContributionPerDeveloper = new Metric();
-            	bugFixContributionPerDeveloper.setObjectId(developer.getId());
-				bugFixContributionPerDeveloper.setObjectType("Developer");
-				bugFixContributionPerDeveloper.setValue(Float.parseFloat(bugFixContributions.get(developerLogin).toString()));
-				bugFixContributionPerDeveloper.setType(bugFixContributionPerDeveloperByPeriod);
-				bugFixContributionPerDeveloper.setStartDateInterval(new java.sql.Date(startDate.getTime()));
-				bugFixContributionPerDeveloper.setEndDateInterval(new java.sql.Date(endDate.getTime()));
-				bugFixContributionPerDeveloper.setMinerSlug(this.minerSlug);
-				this.metricDao.save(bugFixContributionPerDeveloper);
-            }
-        }  
-		
-		System.out.println(logs.size()+" founded logs!");
-		System.out.println("Bug Fix Contribution Miner execut end!");
+		System.out.println("\n---------------------------------------------------------");
+		System.out.println("THE BUGFIX METRICS WERE CALCULATED!");
+		System.out.println("=========================================================\n");
 	}
 }

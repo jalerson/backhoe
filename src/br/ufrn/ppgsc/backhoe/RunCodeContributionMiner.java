@@ -1,12 +1,12 @@
 package br.ufrn.ppgsc.backhoe;
 
-import java.io.File;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Properties;
 
 import br.ufrn.ppgsc.backhoe.enums.MinerType;
+import br.ufrn.ppgsc.backhoe.enums.Team;
 import br.ufrn.ppgsc.backhoe.formatter.Formatter;
 import br.ufrn.ppgsc.backhoe.miner.Miner;
 import br.ufrn.ppgsc.backhoe.repository.RepositoryFactory;
@@ -19,7 +19,7 @@ import br.ufrn.ppgsc.backhoe.vo.ConfigurationMining;
 
 public class RunCodeContributionMiner {
 
-	public static File generateCSVWithMetrics(int teamNumber, Date startDate, Date endDate) {
+	public static void main(String[] args) {
 		
 		java.util.logging.Logger.getLogger("org.hibernate").setLevel(java.util.logging.Level.OFF);
 		
@@ -32,6 +32,11 @@ public class RunCodeContributionMiner {
 		codeRepository.setPassword(svnProperties.getProperty("password"));
 		codeRepository.setURL(svnProperties.getProperty("url"));
 		
+//		CodeRepository codeRepository = (CodeRepository) RepositoryFactory.createRepository(RepositoryType.GIT);
+//		codeRepository.setUsername(svnProperties.getProperty("username"));
+//		codeRepository.setPassword(svnProperties.getProperty("password"));
+//		codeRepository.setURL("https://github.com/AlexSousart/br.com.lunarem.anacleliavendas.git");
+		
 		TaskRepository tasktRepository = (TaskRepository) RepositoryFactory.createRepository(RepositoryType.IPROJECT);
 		tasktRepository.setUsername(iprojectProperties.getProperty("username"));
 		tasktRepository.setPassword(iprojectProperties.getProperty("password"));
@@ -42,43 +47,43 @@ public class RunCodeContributionMiner {
 		localRepository.setPassword(localRepositoryProperties.getProperty("password"));
 		localRepository.setURL(localRepositoryProperties.getProperty("url"));
 		
-//		Date startDate = Date.valueOf("2015-02-09");
-//		Date endDate = Date.valueOf("2015-02-10");
+		Date startDate = Date.valueOf("2015-07-01");
+		Date endDate = Date.valueOf("2015-07-31");
 
-		ArrayList<String> ignoredPaths = new ArrayList<String>(Arrays.asList(new String[]{ "/trunk/LPS", "/ExemploIntegracaoSIAFI", "/branches" }));
+		ArrayList<String> ignoredPaths = new ArrayList<String>(Arrays.asList(new String[]{ "/trunk/LPS", "/ExemploIntegracaoSIAFI", "/branches", "target/" }));
 	
-//		ArrayList<ConfigurationMining> configurations = new ArrayList<ConfigurationMining>();
+		ArrayList<ConfigurationMining> configurations = new ArrayList<ConfigurationMining>();
 		
-//		configurations.add(new ConfigurationMining(MinerType.CODE_CONTRIBUTION_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
-//		configurations.add(new ConfigurationMining(MinerType.CODECOMPLEXITY_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
-//		configurations.add(new ConfigurationMining(MinerType.BUGFIX_CONTRIBUTION_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
-//		configurations.add(new ConfigurationMining(MinerType.BUGGY_COMMIT_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
-//		configurations.add(new ConfigurationMining(MinerType.FAILED_TESTS_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
-//		configurations.add(new ConfigurationMining(MinerType.TASK_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.CODE_CONTRIBUTION_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.CODECOMPLEXITY_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.BUGFIX_CONTRIBUTION_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.BUGGY_COMMIT_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.FAILED_TESTS_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+		configurations.add(new ConfigurationMining(MinerType.TASK_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
 		
-//		configurations.add(new ConfigurationMining(MinerType.UNIFIED_CONTRIBUTION_MINER, teamNumber, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
-//		
-//		for (ConfigurationMining config : configurations) {
-//	
-//			Miner miner = config.getMiner();
-//			Formatter formatter = config.getFormatter();
-//			miner.setup();
-//			miner.execute();
-//			formatter.setup();
-//			formatter.format();
-//		}
+		configurations.add(new ConfigurationMining(MinerType.UNIFIED_CONTRIBUTION_MINER, Team.SIGAA, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository));
+
+		for (ConfigurationMining config : configurations) {
+	
+			Miner miner = config.getMiner();
+			Formatter formatter = config.getFormatter();
+			miner.setup();
+			miner.execute();
+			formatter.setup();
+			formatter.format();
+		}
 		
 //		ConfigurationMining unifiedContribution = new ConfigurationMining(MinerType.UNIFIED_CONTRIBUTION_MINER, teamNumber, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository);
-		ConfigurationMining unifiedContribution = new ConfigurationMining(MinerType.TASK_MINER, teamNumber, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository);
+//		ConfigurationMining unifiedContribution = new ConfigurationMining(MinerType.TASK_MINER, teamNumber, startDate, endDate, ignoredPaths, codeRepository, tasktRepository, localRepository);
+//		
+//		Miner unifiedContributionMiner = unifiedContribution.getMiner();
+//		unifiedContributionMiner.setup();
+//		unifiedContributionMiner.execute();
+//		
+//		Formatter unifieFormatter = unifiedContribution.getFormatter();
+//		unifieFormatter.setup();
+//		return unifieFormatter.format();
 		
-		Miner unifiedContributionMiner = unifiedContribution.getMiner();
-		unifiedContributionMiner.setup();
-		unifiedContributionMiner.execute();
-		
-		Formatter unifieFormatter = unifiedContribution.getFormatter();
-		unifieFormatter.setup();
-		return unifieFormatter.format();
-		
-//		System.exit(0);
+		System.exit(0);
 	}
 }
