@@ -103,4 +103,12 @@ public class DiffChild {
 	public void setBlames(List<Blame> blames) {
 		this.blames = blames;
 	}
+
+	@Override
+	public String toString() {
+		return "DiffChild [lineJustBefore=" + lineJustBefore + ", header="
+				+ header + ", additions=" + additions + ", removals="
+				+ removals + ", lineJustAfter=" + lineJustAfter + ", blames="
+				+ blames + "]";
+	}
 }

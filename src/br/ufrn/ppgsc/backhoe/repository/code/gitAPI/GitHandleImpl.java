@@ -58,14 +58,15 @@ public class GitHandleImpl implements GitHandle {
 		String[] command = new String[] { "git", "clone", url};
 		
 			
-			Process p;
-			try {
-				p = Runtime.getRuntime().exec(command, null, new File("repositories/"));
-				verifyGitCommandProcessOutputError(p);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		Process p;
+		try {
+			p = Runtime.getRuntime().exec(command, null, new File("repositories/"));
+			verifyGitCommandProcessOutputError(p);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		if(wasClonedRepository()){
 			this.directoryPath = getDirectoryPath(url);
 		}
@@ -117,32 +118,22 @@ public class GitHandleImpl implements GitHandle {
 		Process p = Runtime.getRuntime().exec(command, null, new File(getDirectoryPath(url)));
 		return p.getInputStream();
 	}
-	
-//	private InputStream executeGitCommand(String[] command, String directory) throws IOException {
-//		Process p = Runtime.getRuntime().exec(command, null, new File(directory));
-//		return p.getInputStream();
-//	}
+
 	
 	/*
 	 *
 	 * Methos to recovery information of commit and its changed paths from git repository
 	 *
 	 */
+
 	
-	public static void main(String[] args) {
-		
-		GitHandleImpl git = new GitHandleImpl("https://github.com/vicenteneto/HibernateSample.git", null, null);
-		
-		Date startDate = Date.valueOf("2013-01-01");
-		Date endDate = Date.valueOf("2015-12-17");
-		List<String> developers = new ArrayList<String>(Arrays.asList(new String[]{ "joaohelis.bernardo@gmail.com", "smithascari@gmail.com","vicente.neto@dce.ufpb.br"}));
-		List<GITLogEntry> logs = git.findCommitsByTimeRangeAndDevelopers(startDate, endDate, developers, true, null);
-		for(GITLogEntry log: logs){
-			System.out.println(log);
-			for(GITLogChange change: log.getChangedPaths())
-				System.out.println(change);
-			System.out.println();
-		}
+	public BufferedReader diff(String revisionFile1, String filePath1, String revisionFile2, String filePath2){
+		BufferedReader br = null;
+		try{
+			String command = "git diff "+revisionFile1+":"+filePath1+" "+revisionFile2+":"+filePath2;
+			br = new BufferedReader(new InputStreamReader(executeGitCommand(command)));
+		}catch(Exception e){}
+		return br;
 	}
 	
 	@Override

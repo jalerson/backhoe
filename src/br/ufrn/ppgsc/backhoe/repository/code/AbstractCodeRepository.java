@@ -1,5 +1,7 @@
 package br.ufrn.ppgsc.backhoe.repository.code;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,6 +23,8 @@ import br.ufrn.ppgsc.backhoe.persistence.model.ChangedPath;
 import br.ufrn.ppgsc.backhoe.persistence.model.Commit;
 import br.ufrn.ppgsc.backhoe.persistence.model.Developer;
 import br.ufrn.ppgsc.backhoe.persistence.model.TaskLog;
+import br.ufrn.ppgsc.backhoe.persistence.model.helper.Diff;
+import br.ufrn.ppgsc.backhoe.persistence.model.helper.DiffChild;
 import br.ufrn.ppgsc.backhoe.repository.AbstractRepository;
 
 public abstract class AbstractCodeRepository extends AbstractRepository implements CodeRepository{
@@ -233,5 +237,77 @@ public abstract class AbstractCodeRepository extends AbstractRepository implemen
 			}
 		}
 		return changes;
+	}
+	
+	protected void buildDiffChilds(Diff diff, BufferedReader brOut){
+		DiffChild childReference = null;
+		String theLineBefore = null;
+		try {
+			System.out.println("===================== DIFF ===================");
+			while (brOut.ready()) {
+				String line = brOut.readLine();			
+				System.out.println(line);
+				if (!verifyWhiteSpace(line)) {
+					if (isDiffChild(line)) {
+						DiffChild child = new DiffChild();
+						diff.getChildren().add(child);
+						child.setHeader(line);
+						childReference = child;
+					} else if (isAddition(line)) {
+						if (childReference != null) {
+							childReference.getAdditions().add(line);
+							if (theLineBefore != null)
+								childReference.setLineJustBefore(theLineBefore);
+							theLineBefore = null;
+						}
+					} else if (isRemoval(line)) {
+						if (childReference != null) {
+							childReference.getRemovals().add(line);
+							if (theLineBefore != null)
+								childReference.setLineJustBefore(theLineBefore);
+							theLineBefore = null;
+						}
+					} else {
+						theLineBefore = line;
+					}
+				}
+			}
+			System.out.println("================== DIFF END ===================");
+		} catch (IOException io) {
+			io.printStackTrace();
+		}
+	}
+	
+	private boolean isDiffChild(String line) {
+		Pattern pattern = Pattern
+				.compile("@@\\s-\\d+,\\d+\\s\\+\\d+,\\d+\\s@@");
+		Matcher matcher = pattern.matcher(line);
+		return matcher.find();
+	}
+
+	private boolean isAddition(String line) {
+		Pattern pattern = Pattern.compile("^(\\+\\s.+)");
+		Matcher matcher = pattern.matcher(line);
+
+		boolean result = matcher.find();
+
+		if (!result) {
+			pattern = Pattern.compile("^(\\+)");
+			matcher = pattern.matcher(line);
+			result = matcher.find();
+		}
+
+		return result;
+	}
+
+	private boolean isRemoval(String line) {
+		Pattern pattern = Pattern.compile("-\\s.+");
+		Matcher matcher = pattern.matcher(line);
+
+		return matcher.find();
+	}
+	
+	private boolean verifyWhiteSpace(String line) {
+		return line.replaceAll("\\+", "").replaceAll("-", "").trim().length() == 0;
 	}
 }

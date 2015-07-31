@@ -1,5 +1,6 @@
 package br.ufrn.ppgsc.backhoe.repository.code;
 
+import java.io.BufferedReader;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
@@ -145,14 +146,46 @@ public class GitRepository extends AbstractCodeRepository{
 
 	@Override
 	public List<ChangedPath> getChangedPathsFromLogTarefas(List<TaskLog> logs) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.getChangedPathsFromLogTarefas(logs, Commit.RepositoryType.GIT);
 	}
-
+	
 	@Override
 	public List<Diff> buildDiffs(List<ChangedPath> changedPaths) {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<Diff> diffs = new ArrayList<Diff>();
+
+		for (ChangedPath changedPath : changedPaths) {
+			List<String> fileRevisions;
+			try {
+				fileRevisions = this.gitRepositoryHandle.getFileRevisions(changedPath.getPath(), null, changedPath.getCommit().getRevision());
+						
+				String fixingRevision = changedPath.getCommit().getRevision();		
+				String startRevision = fileRevisions.get(0);				
+				String previousRevision = (fileRevisions.size() > 1)? fileRevisions.get(fileRevisions.size()-2):fileRevisions.get(0);
+				
+				System.out.println("=================================================================");
+				System.out.println("Executing Diff on path: "+changedPath.getPath()+"\n"
+								 + "Fixing Revision: "+fixingRevision+"\n"
+								 + "Previous Revision: "+previousRevision);
+				
+				BufferedReader brOut = this.gitRepositoryHandle.diff(previousRevision, changedPath.getPath(), 
+											  fixingRevision, changedPath.getPath());
+	
+				System.out.println("=================================================================");
+				
+				Diff diff = new Diff(changedPath.getCommit().getTask(), fixingRevision,
+						previousRevision, startRevision, changedPath);
+				
+				diffs.add(diff);
+				
+				if(brOut != null)
+					buildDiffChilds(diff, brOut);
+			
+			} catch (GitAPIException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return diffs;
 	}
 
 	@Override

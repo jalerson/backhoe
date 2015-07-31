@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
@@ -270,8 +268,8 @@ public class SVNRepository extends AbstractCodeRepository implements CodeReposit
 				System.out.println("=================================================================");
 				diffClient.doDiff(urlPath, fixingRevision, previousRevision, fixingRevision, SVNDepth.INFINITY, true, diffOut);
 				
-				Diff diff = new Diff(changedPath.getCommit().getTask(), fixingRevision.getNumber(), 
-						previousRevision.getNumber(), startRevision.getNumber(), changedPath);
+				Diff diff = new Diff(changedPath.getCommit().getTask(), Long.toString(fixingRevision.getNumber()), 
+						 Long.toString(previousRevision.getNumber()),  Long.toString(startRevision.getNumber()), changedPath);
 				
 				diffs.add(diff);
 				buildDiffChilds(diff, diffOut);
@@ -312,68 +310,7 @@ public class SVNRepository extends AbstractCodeRepository implements CodeReposit
 				diffOut.toByteArray());
 		BufferedReader br = new BufferedReader(new InputStreamReader(
 				diffInputStream));
-		DiffChild childReference = null;
-		String theLineBefore = null;
-		try {
-			while (br.ready()) {
-				String line = br.readLine();
-				if (!verifyWhiteSpace(line)) {
-					if (isDiffChild(line)) {
-						DiffChild child = new DiffChild();
-						diff.getChildren().add(child);
-						child.setHeader(line);
-						childReference = child;
-					} else if (isAddition(line)) {
-						if (childReference != null) {
-							childReference.getAdditions().add(line);
-							if (theLineBefore != null)
-								childReference.setLineJustBefore(theLineBefore);
-							theLineBefore = null;
-						}
-					} else if (isRemoval(line)) {
-						if (childReference != null) {
-							childReference.getRemovals().add(line);
-							if (theLineBefore != null)
-								childReference.setLineJustBefore(theLineBefore);
-							theLineBefore = null;
-						}
-					} else {
-						theLineBefore = line;
-					}
-				}
-			}
-		} catch (IOException io) {
-			io.printStackTrace();
-		}
-	}
-
-	private boolean isDiffChild(String line) {
-		Pattern pattern = Pattern
-				.compile("@@\\s-\\d+,\\d+\\s\\+\\d+,\\d+\\s@@");
-		Matcher matcher = pattern.matcher(line);
-		return matcher.find();
-	}
-
-	private boolean isAddition(String line) {
-		Pattern pattern = Pattern.compile("^(\\+\\s.+)");
-		Matcher matcher = pattern.matcher(line);
-
-		boolean result = matcher.find();
-
-		if (!result) {
-			pattern = Pattern.compile("^(\\+)");
-			matcher = pattern.matcher(line);
-			result = matcher.find();
-		}
-
-		return result;
-	}
-
-	private boolean isRemoval(String line) {
-		Pattern pattern = Pattern.compile("-\\s.+");
-		Matcher matcher = pattern.matcher(line);
-
-		return matcher.find();
+		buildDiffChilds(diff, br);
 	}
 
 	public List<Blame> buildBlames(List<Diff> diffs) {
@@ -386,12 +323,12 @@ public class SVNRepository extends AbstractCodeRepository implements CodeReposit
 		for (Diff diff : diffs) {
 			
 			System.out.print("Analizing diff "+(count++)+"/"+diffs.size()+" to build blames...");
-			SVNRevision svnFixingRevision = SVNRevision.create(diff
-					.getFixingRevision());
-			SVNRevision svnStartRevision = SVNRevision.create(diff
-					.getStartRevision());
-			SVNRevision svnPreviousRevision = SVNRevision.create(diff
-					.getPreviousRevision());
+			SVNRevision svnFixingRevision = SVNRevision.create(new Long(diff
+					.getFixingRevision()));
+			SVNRevision svnStartRevision = SVNRevision.create(new Long(diff
+					.getStartRevision()));
+			SVNRevision svnPreviousRevision = SVNRevision.create(new Long(diff
+					.getPreviousRevision()));
 
 			ChangedPath changedPath = diff.getChangedPath();
 
@@ -444,9 +381,5 @@ public class SVNRepository extends AbstractCodeRepository implements CodeReposit
 			}
 		}
 		return blamesAnalized;
-	}
-
-	private boolean verifyWhiteSpace(String line) {
-		return line.replaceAll("\\+", "").replaceAll("-", "").trim().length() == 0;
 	}
 }

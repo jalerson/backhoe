@@ -10,9 +10,9 @@ public class Diff {
 	
 //	private TaskLog log;
 	private Task task;
-	private long fixingRevision;
-	private long previousRevision;
-	private long startRevision;
+	private String fixingRevision;
+	private String previousRevision;
+	private String startRevision;
 	private ChangedPath changedPath;
 	private List<DiffChild> children;
 	
@@ -20,13 +20,13 @@ public class Diff {
 		this.children = new LinkedList<DiffChild>();
 	}
 	
-	public Diff(Task task, long fixingRevision, long previousRevision,
-			long startRevision, ChangedPath changedPath) {
+	public Diff(Task task, String fixingRevision, String previousRevision,
+			String startRevision, ChangedPath changedPath) {
 		this(task, fixingRevision, previousRevision, startRevision, changedPath, new LinkedList<DiffChild>());
 	}
 	
-	public Diff(Task task, long fixingRevision, long previousRevision,
-			long startRevision, ChangedPath changedPath,
+	public Diff(Task task, String fixingRevision, String previousRevision,
+			String startRevision, ChangedPath changedPath,
 			List<DiffChild> children) {
 		super();
 		this.task = task;
@@ -43,22 +43,22 @@ public class Diff {
 	public void setTask(Task task) {
 		this.task = task;
 	}
-	public long getFixingRevision() {
+	public String getFixingRevision() {
 		return fixingRevision;
 	}
-	public void setFixingRevision(long fixingRevision) {
+	public void setFixingRevision(String fixingRevision) {
 		this.fixingRevision = fixingRevision;
 	}
-	public long getPreviousRevision() {
+	public String getPreviousRevision() {
 		return previousRevision;
 	}
-	public void setPreviousRevision(long previousRevision) {
+	public void setPreviousRevision(String previousRevision) {
 		this.previousRevision = previousRevision;
 	}
-	public long getStartRevision() {
+	public String getStartRevision() {
 		return startRevision;
 	}
-	public void setStartRevision(long startRevision) {
+	public void setStartRevision(String startRevision) {
 		this.startRevision = startRevision;
 	}
 	public ChangedPath getChangedPath() {
@@ -72,5 +72,13 @@ public class Diff {
 	}
 	public void setChildren(List<DiffChild> children) {
 		this.children = children;
+	}
+
+	@Override
+	public String toString() {
+		return "Diff [fixingRevision=" + fixingRevision + ", previousRevision="
+				+ previousRevision + ", startRevision=" + startRevision
+				+ ", changedPath=" + changedPath + ", children=" + children
+				+ "]";
 	}
 }

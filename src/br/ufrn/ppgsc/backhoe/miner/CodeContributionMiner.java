@@ -148,24 +148,21 @@ public class CodeContributionMiner extends AbstractMiner {
 					
 					Integer addedMethods = newClass.getMethods().size();
 					
-//					if(added != 0){
-						Metric addedLocMetric = new Metric();
-						addedLocMetric.setObjectId(changedPath.getId());
-						addedLocMetric.setObjectType("ChangedPath");
-						addedLocMetric.setValue(added.floatValue());
-						addedLocMetric.setType(addedLOCMetricType);
-						addedLocMetric.setMinerSlug(this.minerSlug);
-						metricDao.save(addedLocMetric);
-//					}
-//					if(addedMethods != 0){
-						Metric addedMethodsMetric = new Metric();
-						addedMethodsMetric.setObjectId(changedPath.getId());
-						addedMethodsMetric.setObjectType("ChangedPath");
-						addedMethodsMetric.setValue(addedMethods.floatValue());
-						addedMethodsMetric.setType(addedMethodsMetricType);
-						addedMethodsMetric.setMinerSlug(this.minerSlug);
-						metricDao.save(addedMethodsMetric);
-//					}
+					Metric addedLocMetric = new Metric();
+					addedLocMetric.setObjectId(changedPath.getId());
+					addedLocMetric.setObjectType("ChangedPath");
+					addedLocMetric.setValue(added.floatValue());
+					addedLocMetric.setType(addedLOCMetricType);
+					addedLocMetric.setMinerSlug(this.minerSlug);
+					metricDao.save(addedLocMetric);
+
+					Metric addedMethodsMetric = new Metric();
+					addedMethodsMetric.setObjectId(changedPath.getId());
+					addedMethodsMetric.setObjectType("ChangedPath");
+					addedMethodsMetric.setValue(addedMethods.floatValue());
+					addedMethodsMetric.setType(addedMethodsMetricType);
+					addedMethodsMetric.setMinerSlug(this.minerSlug);
+					metricDao.save(addedMethodsMetric);
 				}
 				
 				else{
@@ -254,6 +251,7 @@ public class CodeContributionMiner extends AbstractMiner {
 		Integer changed = 0;
 		
 		Patch<String> patch = DiffUtils.diff(CodeRepositoryUtil.getContentByLines(previousContent), CodeRepositoryUtil.getContentByLines(currentContent));
+			
 		List<Delta<String>> deltas = patch.getDeltas();
 		
 		for (Delta<String> delta : deltas) {
